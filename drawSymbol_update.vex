@@ -662,7 +662,12 @@ void drawLine(vector a; vector b; float scale; vector color){
 
     //vector pl = set(;
     //vector pr = sin()+b;
-    drawNumber(mid+{0,0,0}, "D "+sprintf("%g",length),scale,color);
+    //drawNumber(mid+{0,0,0}, "D "+sprintf("%g",length),scale/4,color);
+}
+void drawLine2(vector a; vector b;vector displacement; float l; float scale; vector color){
+    vector a2 = lerp(a+displacement,b+displacement,l);
+    vector b2 = lerp(b+displacement,a+displacement,l);
+    drawLine(a2,b2,scale,color);
 }
 float toDEG(float radians){
     return(180*(radians/3.14159265));
@@ -679,83 +684,128 @@ float clampAngle(float inputAngle){
     x = x*3.14159265;
     return x;
 }
-float calcAngleDiff(float a;float b;float c; float d){
-    //we could do some absolute numbers, but It is better if we know if it is to the left or to the right.
-    vector v_a = set(a,b,0);
-    vector v_b = set(c,d,0);
-    vector v_Na = normalize(v_a);
-    vector v_Nb = normalize(v_b);
-    //rotate v_b based on v_a.
+void drawAngle(vector position;float scale; float radians; vector color){
+    //draw a circle with 10 points.
+    int circle = addprim(0,"polyline");
+    float total = 36;
+    float pi = 3.141592;
+    for(int points=0;points<total;points++){
+        float fraction = points/total;
+        int p = addpoint(0, set(position[0]+cos(fraction*2*pi)*scale ,position[1],position[2]+sin(fraction*2*pi)*scale));
+        int pass = setpointattrib(0, "Cd", p, color/5, "set");
+        addvertex(0, circle, p);
+    }
+    int p = addpoint(0, set(position[0]+1*scale ,position[1],position[2]+0*scale));
+    int pass = setpointattrib(0, "Cd", p, color/5, "set");
+    addvertex(0, circle, p);
+    //draw angle
+    int direction = addprim(0,"polyline");
+    int p0 = addpoint(0,position);
+    int p1 = addpoint(0,set(position[0]+cos(radians)*scale ,position[1],position[2]+sin(radians)*scale));
+    pass = setpointattrib(0, "Cd", p0, color*2, "set");
+    pass = setpointattrib(0, "Cd", p1, color*2, "set");
+
+    addvertex(0,direction,p0);
+    addvertex(0,direction,p1);
+
+    int reference = addprim(0,"polyline");
+    int p00 = addpoint(0, set(position[0]+(1*scale),position[1],position[2]+(0*scale)));
+    int p01 = addpoint(0, set(position[0]+(1.2*scale),position[1],position[2]+(0*scale)));
+    pass = setpointattrib(0, "Cd", p00, color, "set");
+    pass = setpointattrib(0, "Cd", p01, color, "set");
+    addvertex(0,reference,p00);
+    addvertex(0,reference,p01);
+}
+// EXAMPLE USE: compareAnglesXZ(set(endA[0]-startA[0],0,endA[2]-startA[2]),set(endB[0]-startB[0],0,endB[2]-startB[2])
+float compareAnglesXZ(vector v_A;vector v_B){ 
+    //get input angles, find atan of both vectors.
+    float dax,day,dbx,dby;
+    dax = v_A[0];
+    day = v_A[2];
+    dbx = v_B[0];
+    dby = v_B[2];
+    float angleA = atan2(day,dax);
+    float angleB = atan2(dby,dby);
+    angleB = clampAngle(angleA-angleB);
+    return angleB;
 }
 
-
-
-drawLine({0,0,0},{1,1,0},0.02,{1,0,1});
-drawLine({0,0,0},{2,1,5},0.02,{1,0,1});
-drawLine({0,0,0},{10,1,3},0.02,{1,0,1});
-drawLine({1,1,0},{0.5,-1,2},0.02, {0.5,0,2});
-drawLine({1,1,0},{0.4,-5,3},0.02, {0.4,0,3});
-drawLine({1,1,0},{0.6,-2,3.1},0.02,{0.6,0,3.1});
-
-//GET next vertex sharing the same point
-//int  vertexnext(<geometry>geometry, int linearvertex)   //returns -1 if there are no more vertices at this point.
-
-//Algorithm: start at a vertex, create array of all later verts, get their halfedges, get the src. and dst. of all these edges. 
-//compare the edge angles, if the angle is in a range, continue along to that edge, REASON: don't go upstream.
-
-
-//(start at curve endpoints) --create array of points that have 1 neighbor.
+int dirtypoints[]; //points that are part of a flow already.
+int mergepoints[]; //datastructure: [even(terminal),odd(merge)]
 int zeropoints[];
 for(int ns=0;ns<npoints(0);ns++){
     if(neighbourcount(0,ns)==1){
         push(zeropoints,ns);
     }
 }
-int dirtypoints[]; //points that are part of a flow already.
-int mergepoints[]; //datastructure: [even(terminal),odd(merge)]
-//grow curve from each zero point, storing terminal point.
-for(int zp=0;zp<1;zp++){
-//for(int zp=0;zp<len(zeropoints);zp++){
-    //extract this angle.
-    int starthedge = pointhedge(0,zeropoints[zp]);
-    int src = hedge_srcpoint(0,starthedge);
-    int dst = hedge_dstpoint(0,starthedge);
-    int dstV = hedge_dstvertex(0,starthedge);   
-    vector srcP = point(0,"P",src);
-    vector dstP = point(0,"P",dst);
-    float dx = srcP[0]-dstP[0];
-    float dy = srcP[2]-dstP[2];
-    vector meanP = (srcP+dstP)/2;
-    float angle = atan2(dy,dx);//y,x range -pi > pi
-    float angleD = toDEG(angle);
+
+int frameNumber = chi("frame_number");
+for(int zp=0;zp<len(zeropoints);zp++){
+    if(zp>frameNumber){continue;}//select a single growth path.
+    int visitedpoints[];
+    int currentPoint = zeropoints[zp];
+    int growLoop = 1;
+    float previousAngle = 0;
+    int count = 0;
+    while(growLoop==1&&count<200){
+        count++;
+        //compare current point against all neighbors.
+        if(neighbourcount(0,currentPoint)>4){growLoop=0;break;}//escape
+        int I_neighbors[] = neighbours(0,currentPoint);
+
+        //filter neighbors here.
+        int I_neighbors2[];
+        for(int nvetting=0;nvetting<len(I_neighbors);nvetting++){
+            int pass=1;
+            if(find(zeropoints,I_neighbors[nvetting])>=0){pass=0;}
+            //if(find(visitedpoints,I_neighbors[nvetting])>=0){pass=0;}
+            //if(find(dirtypoints,I_neighbors[nvetting])>=0){pass=0;}
+            if(pass==1){push(I_neighbors2,I_neighbors[nvetting]);}
+        }
+        if(len(I_neighbors2)==0){break;}
 
 
-    drawNumber(srcP+{0.01,0,0},itoa(zp)+">",0.05,hsvtorgb((zp/(len(zeropoints)+.01)),1,0.8)); 
-    drawNumber(srcP+{0.08,0,-0.025},sprintf("%f",angleD),0.01,hsvtorgb(.02,1,2)); 
-    
-    //create an array of next edges.
-    int possibleEdges[]=neighbours(0,dst);
-    float angles[];
-    //for each edge, calculate and draw debug info.
-    for(int pe=0;pe<len(possibleEdges);pe++){
-        if(possibleEdges[pe]==dst){break;}
-        vector otherPointP = point(0,"P",possibleEdges[pe]);
-        dx = dstP[0]-otherPointP[0];
-        dy = dstP[2]-otherPointP[2];
-        meanP = (otherPointP+dstP)/2;
-        angle = atan2(dy,dx);//y,x range -pi > pi
-        angleD = toDEG(angle);
+        float F_angles[];
+        float F_anglesD[];
+        //calculate angle to each neighbor
+        for(int neigh=0;neigh<len(I_neighbors2);neigh++){
+            vector neighP = point(0,"P",I_neighbors2[neigh]);
+            vector currentP = point(0,"P",currentPoint);
+            float dx = neighP[0]-currentP[0];
+            float dy = neighP[2]-currentP[2];
+            float angle = atan2(dy,dx);
+            float angleDelta = clampAngle(angle-previousAngle);
+            push(F_angles,angle);
+            push(F_anglesD,angleDelta);
+            //drawAngle(vector position;float scale; float radians; vector color)
+            vector newV = lerp(currentP,neighP,0.2);
+            vector newV2 = lerp(currentP,neighP,0.3);
+            //drawAngle(newV+  set(0.01,zp/-1000.0,0.00), 0.01, angle, hsvtorgb({0.3,1,1}));
+            //drawAngle(newV2+ set(0.01,zp/-1000.0,0.00), 0.01, angleDelta, hsvtorgb({0.6,1,1}));
+            //drawNumber(newV+ set(0.00,zp/-1000.0,0.00), sprintf("%g",angle/3.141592*180),0.001, hsvtorgb({0.3,1,1}));
+            //drawNumber(newV2+set(0.00,zp/-1000.0,0.00), "D "+sprintf("%g",angleDelta/3.141592*180),0.001, hsvtorgb({0.6,1,1}));
 
-        drawNumber(otherPointP+{0.01,.1,0},itoa(zp)+".1 ",0.05,hsvtorgb(.0,0.8,0.1)); 
-        drawNumber(otherPointP+{0.08,.1,-0.025},sprintf("%f",angleD),0.01,hsvtorgb(.0,1,2)); 
+
+        }
+        //sort by minimum absolute value.
+        int nangleSelect=0;
+        for(int nangle=0;nangle<len(F_angles)-1;nangle++){
+            float angA = abs(F_anglesD[nangle]);
+            float angB = abs(F_anglesD[nangle+1]); 
+            if(angA>angB){
+                nangleSelect=nangle+1;
+            }
+        }
+        //draw line to new point.
+        if(find(dirtypoints,currentPoint)>=0){continue;}
+        drawLine2(point(0,"P",I_neighbors2[nangleSelect]),point(0,"P",currentPoint),set(0,-0.1-count/100.0+zp/3000.0,0),0.9,0.01,hsvtorgb(zp/100.0,1,1));
+        drawNumber(point(0,"P",currentPoint)+set(0,-0.1-count/100.0+zp/3000.0,0),itoa(zp)+"."+itoa(count),0.01,hsvtorgb(zp/100.0,1,2));
+        //setup next loop.
+        push(dirtypoints,currentPoint);
+        push(visitedpoints,currentPoint);
+        push(visitedpoints,I_neighbors2[nangleSelect]);
+
+        previousAngle=F_angles[nangleSelect];
+        currentPoint = I_neighbors2[nangleSelect];     
     }
-
-
-//angle = Pi - abs(abs(a1 - a2) - Pi);
-
 }
-    //int postVertex =  hedge_postdstvertex(0, int hedge)  //next vertex after destination.
-    //int  vertexnext(<geometry>geometry, int linearvertex)       //next vertext on vertex
-    //int  pointedge(<geometry>geometry, int point1, int point2)  //hedge between
-    //int  pointhedge(<geometry>geometry, int point)              //hedge with source point
-    //int  vertexhedge(<geometry>geometry, int vertex)            //hedge with source vertex! 
