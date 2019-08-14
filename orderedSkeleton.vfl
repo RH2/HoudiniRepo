@@ -29,86 +29,27 @@ for(int i=0; i<npoints(inputGeo);i++){
     }
 }
 int prims[];// * -1 if inactive.
-int endpoints[]; //last point of each prim. could have end/merge datastructure.
-string precidents[]; //point before last point of each prim.
+int endPoints[]; //last point of each prim. could have end/merge datastructure.
+int startPoints[];//first point of each prim. 
+string mergePoints[];//list of points that endpoint joins to. (multi-dimensional) "s,1,2,3,e,50,40" <possible
+int dirtyPoints[];//global list of points that have been used
 
 
-//start walking the mesh (we begin at the first zeropoint)
-int currentPoint = zeropoints[0];
-int prim_1 = addprim(outputGeo,"polyline");
-int v = addvertex(outputGeo,prim_1,copyPoint(inputGeo,outputGeo,currentPoint));
-push(prims,prim_1);
-push(endpoints,currentPoint); 
-push(precidents,itoa(currentPoint)); 
+//start walking the mesh (we begin at the first zeropoint) if curve system is not a loop or series of loops within larger loop.
+int currentPoint;
+if(len(zeropoints)>0){
+	zeropoints[0];
+	int prim_1 = addprim(outputGeo,"polyline");
+	int v = addvertex(outputGeo,prim_1,copyPoint(inputGeo,outputGeo,currentPoint));
+	push(prims,prim_1);
+	push(endPoints,currentPoint); 
+	push(startPoints,currentPoint);
+	push(precidents,itoa(currentPoint)); 
+}else{
+	int currentPoint = primpoints(1,0)[0];
+	printf("currentPoint:%f",currentPoint);
 
 
-int step = 0;
-while(step!=-1&&step<10){ //while not all prims are -x. (setinel for safety)
-    step++;
-
-    //easy edge first, continue if no end or junction
-    for(int primIndex=0;primIndex<len(prims);primIndex++){
-    	if(prims[primIndex]<0){break;}
-    	currentPoint = endpoints[primIndex];
-    	if(endpoints[primIndex]<0){break;} //prim is inactive
-	    int edges[] = neighbours(inputGeo,currentPoint);
-	    if(len(edges)==3){step=-1;}
-	    //filter away precident
-	    int pedge[];//pedge is short for "possible edges" (destination points)
-	    for(int filter=0;filter<len(edges);filter++){
-	    	//precidents[primIndex] is a string; we need to unpack using the stringToIntArray function.
-	    	int I_fromString[];
-	    	stringToIntArray(precidents[primIndex],I_fromString);
-			int stringsearch = 0;
-			for(int ss=0;ss<len(I_fromString);ss++){
-				if(I_fromString[ss]==edges[filter]){stringsearch=1;}
-				printf("intfromstring: %f\\n",I_fromString[ss]);
-			}
-			if(stringsearch==0){push(pedge,edges[filter]);}//if unfound, push possible edge to array.
-	    }
-	    printf("pedge length: %f; pedge=%f; precidents=%f\\n",len(pedge),pedge,precidents[primIndex]);
-	    //end loop if nowhere to go.
-	    if(len(pedge)==0){
-	    	prims[primIndex] = primIndex*-1; break;
-	    	printf("nowheretogo\\n");
-	    }
-	    //connect to one of the pedges.
-	    if(len(pedge)==1){
-		    //int copyPoint(int geosource;int geodestination; int index)
-		    v = addvertex(outputGeo,prims[primIndex],copyPoint(inputGeo,outputGeo,pedge[0]));
-		    precidents[primIndex]=precidents[primIndex]+","+itoa(currentPoint);
-		    currentPoint = pedge[0];
-		    endpoints[primIndex]=pedge[0];
-	    	break;
-	    }
-	    if(len(pedge)>1){//this is a junction
-
-	    	//push a new polygon for each branch
-	    	//push an endpoint and precident
-	    	for(int pe=0;pe<len(pedge);pe++){
-
-	    		int branch = addprim(outputGeo,"polyline");
-	    		v = addvertex(outputGeo,prims[primIndex],copyPoint(inputGeo,outputGeo,pedge[pe]));
-
-	    		push(prims,branch);
-	    		push(endpoints,pedge[pe]);
-
-	    		//what is important when creating a new branch? 
-	    			//>does this branch exist already?
-	    				//--solved by checking 
-	    			//>will this branch have enough info to grow properly?
-
-
-
-
-
-	    		//for each pedge push it to the precidents.
-	    		//push(precidents,); //need to use strings instead, so I can do multidimensional arrays.
-	    	}
-	    	//multiply current primitive by -1 to mark as inactive
-	    	prims[primIndex] = primIndex*-1;
-	    }
-    }
 }
 
 

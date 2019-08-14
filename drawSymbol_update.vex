@@ -716,7 +716,6 @@ void drawAngle(vector position;float scale; float radians; vector color){
     addvertex(0,reference,p00);
     addvertex(0,reference,p01);
 }
-// EXAMPLE USE: compareAnglesXZ(set(endA[0]-startA[0],0,endA[2]-startA[2]),set(endB[0]-startB[0],0,endB[2]-startB[2])
 float compareAnglesXZ(vector v_A;vector v_B){ 
     //get input angles, find atan of both vectors.
     float dax,day,dbx,dby;
@@ -738,7 +737,6 @@ for(int ns=0;ns<npoints(0);ns++){
         push(zeropoints,ns);
     }
 }
-
 int frameNumber = chi("frame_number");
 for(int zp=0;zp<len(zeropoints);zp++){
     if(zp>frameNumber){continue;}//select a single growth path.

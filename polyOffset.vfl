@@ -1,0 +1,103 @@
+float clampAngle(float inputAngle){
+    float x = inputAngle/3.14159265;
+    x=x%2;
+    if(x>1){
+        x=-1+(x%1);
+    }
+    if(x<-1){
+        x=1+(x%1);
+    }
+    x = x*3.14159265;
+    return x;
+}
+float diameter = 0.5;
+float radius = diameter/2;
+float pi = 3.14159264;
+float tau = 3.14159264*2;
+int numprim = @numprim;//contains starting curves
+
+//datastructure1:
+//"i,30,21,15,23,i,10,1,5,8" << intersection, point where it happened, other points that join to this intersection
+//datastructure2:
+//"i,30,7,8,9,6,5,4,3,2,1,i,200,180,181,182,60,61,62,32,31,30" << intersection: point where it happened, tuples left,center,right used for merging. 
+for(int i_prim=0;i_prim<numprim;i_prim++){
+
+}
+
+
+
+
+int count = 0;
+for(int i_prim=0;i_prim<numprim;i_prim++){
+	count++;
+	//printf("count:%f",count);
+	int I_points[] = primpoints(0,i_prim);
+	int i_firstVert = I_points[0];
+	int i_lastVert = I_points[len(I_points)-1];
+
+	//printf("fv%f,lv%f\\n",i_firstVert,i_lastVert);
+	//printf("firstvert: %f, lastvert: %f\\n",i_firstVert,i_lastVert);
+
+	int zig = addprim(0,"polyline");
+	int zigPoints[];
+	for(int i_p=0;i_p<len(I_points)-1;i_p++){//expand line
+		//1. get angle to next point 
+		vector thisposition = point(0,"P",I_points[i_p]);
+		vector nextposition = point(0,"P",I_points[i_p+1]);
+		float dx= nextposition[0] - thisposition[0];
+		float dy= nextposition[2] - thisposition[2];
+		float thisangle = atan2(dy,dx);
+		float angleLeft; 
+		float angleRight;
+		if(i_p%2==0){
+			angleLeft = clampAngle(thisangle+pi/2);//rotate counterclockwise 90°
+			angleRight = clampAngle(thisangle-pi/2);//rotate clockwise 90°
+		}else{
+			angleLeft = clampAngle(thisangle-pi/2);//rotate counterclockwise 90°
+			angleRight = clampAngle(thisangle+pi/2);//rotate clockwise 90°			
+		}
+		int pointleft = addpoint(0,set(thisposition[0]+radius*cos(angleLeft),thisposition[1],thisposition[2]+radius*sin(angleLeft))); 
+		int pointright= addpoint(0,set(thisposition[0]+radius*cos(angleRight),thisposition[1],thisposition[2]+radius*sin(angleRight))); 
+		int v0 = addvertex(0,zig,pointleft);
+		int v1 = addvertex(0,zig,I_points[i_p]);
+		int v2 = addvertex(0,zig,pointright);
+
+		//because primpoints was returning empty {}
+		push(zigPoints,pointleft);
+		push(zigPoints,I_points[i_p]);
+		push(zigPoints,pointright);
+	}
+	for(int g=1;g<len(zigPoints);g=g+3){   //<len(zigPoints)/4 == final # of faces.
+		//algorithm is kinda simple: strip with one division pattern is open, uturn, open , uturn
+		// uturn start,start+1, skip 2, end+1, end.
+		if(g+4>len(zigPoints)){break;}
+		int face1 = addprim(0,"poly");
+		int face2 = addprim(0,"poly");
+		int v0,v1,v2,v3; //resulting polygons are quads.
+		if(g%2==0){
+			v3 = addvertex(0,face1,zigPoints[g+4]);
+			v2 = addvertex(0,face1,zigPoints[g+3]);
+			v1 = addvertex(0,face1,zigPoints[g  ]);
+			v0 = addvertex(0,face1,zigPoints[g-1]);
+
+			v3 = addvertex(0,face2,zigPoints[g+3]);
+			v2 = addvertex(0,face2,zigPoints[g+2]);
+			v1 = addvertex(0,face2,zigPoints[g+1]);
+			v0 = addvertex(0,face2,zigPoints[g  ]);
+		}
+		if(g%2==1){
+			v3 = addvertex(0,face1,zigPoints[g+2]);
+			v2 = addvertex(0,face1,zigPoints[g+3]);
+			v1 = addvertex(0,face1,zigPoints[g  ]);
+			v0 = addvertex(0,face1,zigPoints[g+1]);
+
+			v2 = addvertex(0,face2,zigPoints[g+3]);
+			v3 = addvertex(0,face2,zigPoints[g+4]);
+			v1 = addvertex(0,face2,zigPoints[g-1]);
+			v0 = addvertex(0,face2,zigPoints[g  ]);
+		}
+	}
+	removeprim(0,zig,0);
+	removeprim(0,i_prim,0);
+}
+
