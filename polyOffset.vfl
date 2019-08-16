@@ -10,70 +10,63 @@ float clampAngle(float inputAngle){
     x = x*3.14159265;
     return x;
 }
-float diameter = 0.4;
+void createStar(vector p;int points[]){ //order points clockwise.?
+	printf("todo");
+}
+void mergeArray(int array1[];int array2[]){
+	foreach(int a2; array2){
+		if(find(array1,a2)<0){
+			push(array1, a2);
+		}
+	}
+}
+float diameter = 0.1;
 float radius = diameter/2;
 float pi = 3.14159264;
 float tau = 3.14159264*2;
 int numprim = @numprim;//contains starting curves
 
-//datastructure1:
-//"i,30,21,15,23,i,10,1,5,8" << intersection, point where it happened, other points that join to this intersection
-//datastructure2:
-//"i,30,7,8,9,6,5,4,3,2,1,i,200,180,181,182,60,61,62,32,31,30" << intersection: point where it happened, tuples left,center,right used for merging.
- 
+
 
 //need to remove points that are too close to intersection, and keep track of new connect point.
-int intersections[];
-vector intersectionP[]; //store locations of intersections.
+//int intersections[];
+string intersectionData[];
+int pointleafleaf[]; // datastructure: p,left,right,p,left,right;
+vector V_interP[]; //store locations of intersections.
 int donotsweep[];
+int allneigh[];
 for(int p=0;p<npoints(0);p++){  //gather intersections
 	if(neighbourcount(0,p)>2){
-		push(intersections,p);
-		push(intersectionP,point(0,"P",p));
+		vector loc = point(0,"P",p);
+		vector intersectP = point(0,"P", p);
+		int neighs[] = neighbours(0,p);
+		mergeArray(allneigh,neighs);
+		push(donotsweep,p);
+		//removepoint(0,p,1);
+		push(V_interP,intersectP);
+		string S_output = itoa(p)+",";
+		for(int n=0;n<len(neighs);n++){
+
+			if(neighs[n]>=0){
+				S_output+=itoa(neighs[n]);
+			}
+			if(n!=len(neighs)-1){S_output+=",";}
+		}
+		push(intersectionData,S_output);
+		//push(intersectionData,S_output);
+		//intersectionData+=S_output;
 	}
 }
-string intersectionStructure[];
-//for each intersection and walk it until we find a point out of range.
-for(int intSearch=0;intSearch<len(intersections);intSearch++){
-	int neighs[] = neighbours(0,intersecitons[intSearch]);
-	vector intersectP = point(0,"P", intersecitons[intSearch]);
-	for(int neighDistSearch = 0; neighDistSearch<len(neighs[]);neighDistSearch++){
-		//do distance search.
-		vector neighP = point(0,"P", neighs[neighDistSearch]);
-		vector d = intersectP-neighP;
-		float distance = length(d);
-		if(distance<radius*1.3){ //if it is too close to intersection:
-			push(donotsweep,neighs[neighDistSearch]);
-			
-		}else{ // we need to march the neighbors some more.
-
-		}
-
-
-	}
-
-}
+printf("intersectionData: %f\\n",intersectionData);
+printf("intersectionData[0]: %f\\n",intersectionData[0]);
+printf("intersectionData[1]: %f\\n",intersectionData[1]);
+printf("allneigh: %f\\n",allneigh);
 
 
 
 
-
-/* //THE OLD WAY, Looping through all points. 
-for(int p=0;p<npoints(0);p++){	//remove points within radius (distance)
-	vector a = point(0,"P",p);
-	for(int x = 0; x<len(intersections);x++){
-		vector b = point(0,"P",intersections[x]);
-		vector c = a-b;
-		float dist = length(c);
-		//if(dist<.0001){break;}
-		if(dist<radius*1.2){
-			//removepoint(0,p,1);
-			push(donotsweep,p);
-		}
-	}	
-}
-*/	
-int count = 0;
+//CREATE SWEEPS
+int count = 0; 
 for(int i_prim=0;i_prim<numprim;i_prim++){
 	count++;
 	//printf("count:%f",count);
@@ -88,7 +81,7 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 	int zigPoints[];
 	for(int i_p=0;i_p<len(I_points)-1;i_p++){//expand line
 		//1. get angle to next point
-		if(find(donotsweep,I_points[i_p])<-0){  //if a point belongs to the donotsweep set, don't sweep it!
+		if(find(donotsweep,I_points[i_p])<-0){  //greenlight sweep for point if it isn't in the donotsweep[]!
 			vector thisposition = point(0,"P",I_points[i_p]);
 			vector nextposition = point(0,"P",I_points[i_p+1]);
 			float dx= nextposition[0] - thisposition[0];
@@ -105,6 +98,7 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 			}
 			int pointleft = addpoint(0,set(thisposition[0]+radius*cos(angleLeft),thisposition[1],thisposition[2]+radius*sin(angleLeft))); 
 			int pointright= addpoint(0,set(thisposition[0]+radius*cos(angleRight),thisposition[1],thisposition[2]+radius*sin(angleRight))); 
+			if(find(allneigh, I_points[i_p])>0){push(pointleafleaf,I_points[i_p]);push(pointleafleaf,pointleft);push(pointleafleaf,pointright);}//push the points to the pointleafleaf[];
 			int v0 = addvertex(0,zig,pointleft);
 			int v1 = addvertex(0,zig,I_points[i_p]);
 			int v2 = addvertex(0,zig,pointright);
@@ -147,5 +141,59 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 	}
 	removeprim(0,zig,0);
 	removeprim(0,i_prim,0);
+}
+printf("pointleafleaf: %f\\n",pointleafleaf);
+
+
+//CREATE STARS
+for(int star=0;star<len(intersectionData);star++){
+
+	//sort angles.
+		//1. create array of angles.
+			string s_this_star[] = split(intersectionData[star],",");
+			vector this_origin = atoi(s_this_star[0]);
+			vector this_origin_P = point(0,"P",atoi(s_this_star[star]));
+			int I_medians[];
+			for(int m = 1;m<len(s_this_star);m++){
+				//int var = atoi(s_this_star[m]);
+				push(I_medians,atoi(s_this_star[m]));
+			}
+			float F_medians[];
+			float angles[];
+			//now to make angles
+			for(int ma = 0; ma<len(I_medians);ma++){
+				vector mapos =  point(0,"P",I_medians[ma]);
+				float dx = mapos[0]-this_origin_P[0];
+				float dy = mapos[2]-this_origin_P[2];
+				float angle = atan2(dy,dx);
+				push(angles,angle);
+			}
+			printf("angles:%f\\n",angles);
+		//2. argsort angles.
+			int argOrder[] = argsort(angles);
+			printf("argOrder: %f\\n",argOrder);
+		//3. reorder points.
+			reorder(I_medians,argOrder);
+			reorder(angles,argOrder);
+			printf("I_medians_ordered: %f\\n",I_medians);  //not possible for three points to be out of order, but 3+n can.
+		//4. find angles between angles, and create points.
+			float subAngles[];
+			for(int a=0;a<len(angles);a++){
+				int address2 = (a+1)%len(angles);
+				float newA = clampAngle(angles[a]+angles[address2])/2;
+				push(subAngles,newA);
+			}
+			printf("\\n subAngles: %f\\n",subAngles);
+		//5. create polygons.
+			int subPoints = newprim(0,"polyline");
+			for(int i =0; i<len(subAngles);i++){
+				float inA = subAngles[i];
+				int p  = addpoint(0, set(this_origin_P[0]+ cos(inA)*radius,this_origin_P[1],this_origin_P[2]+sin(inA)*radius));
+				int v = addvertex(0,subPoints,p);
+			}
+
+
+
+
 }
 
