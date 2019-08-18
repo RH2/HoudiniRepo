@@ -20,21 +20,34 @@ void mergeArray(int array1[];int array2[]){
 		}
 	}
 }
-float diameter = 0.1;
+float angleBetweenVectors2(vector a; vector b){
+	a = normalize(a*{1,0,1});
+	b = normalize(b*{1,0,1});
+	vector c = normalize(a+b);
+
+	float result = atan2(c[2],c[0]);
+	return(result);
+}
+float sidecheckXZ(vector s; vector e; vector p){ //+=left
+	float result = (e[0]-s[0])*(p[2]-s[2])  -  (e[2]-s[2])*(p[0]-s[0]);
+	return result;
+}
+
+float diameter = 0.2;
 float radius = diameter/2;
 float pi = 3.14159264;
 float tau = 3.14159264*2;
 int numprim = @numprim;//contains starting curves
 
-
-
 //need to remove points that are too close to intersection, and keep track of new connect point.
 //int intersections[];
 string intersectionData[];
 int pointleafleaf[]; // datastructure: p,left,right,p,left,right;
+vector V_pll[];		//store positions of pointleafleaf, because point query is failing. 
 vector V_interP[]; //store locations of intersections.
 int donotsweep[];
 int allneigh[];
+
 for(int p=0;p<npoints(0);p++){  //gather intersections
 	if(neighbourcount(0,p)>2){
 		vector loc = point(0,"P",p);
@@ -57,17 +70,17 @@ for(int p=0;p<npoints(0);p++){  //gather intersections
 		//intersectionData+=S_output;
 	}
 }
-printf("intersectionData: %f\\n",intersectionData);
-printf("intersectionData[0]: %f\\n",intersectionData[0]);
-printf("intersectionData[1]: %f\\n",intersectionData[1]);
-printf("allneigh: %f\\n",allneigh);
-
+//printf("intersectionData: %f\\n",intersectionData);
+//printf("intersectionData[0]: %f\\n",intersectionData[0]);
+//printf("intersectionData[1]: %f\\n",intersectionData[1]);
+//printf("allneigh: %f\\n",allneigh);
 
 
 
 //CREATE SWEEPS
 int count = 0; 
 for(int i_prim=0;i_prim<numprim;i_prim++){
+//for(int i_prim=0;i_prim<1;i_prim++){
 	count++;
 	//printf("count:%f",count);
 	int I_points[] = primpoints(0,i_prim);
@@ -81,7 +94,7 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 	int zigPoints[];
 	for(int i_p=0;i_p<len(I_points)-1;i_p++){//expand line
 		//1. get angle to next point
-		if(find(donotsweep,I_points[i_p])<-0){  //greenlight sweep for point if it isn't in the donotsweep[]!
+		if(find(donotsweep,I_points[i_p])<-0){  //greenlight sweep for point. if it isn't in the donotsweep[]!
 			vector thisposition = point(0,"P",I_points[i_p]);
 			vector nextposition = point(0,"P",I_points[i_p+1]);
 			float dx= nextposition[0] - thisposition[0];
@@ -89,16 +102,46 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 			float thisangle = atan2(dy,dx);
 			float angleLeft; 
 			float angleRight;
+			int leftflag;
 			if(i_p%2==0){
 				angleLeft = clampAngle(thisangle+pi/2);//rotate counterclockwise 90°
 				angleRight = clampAngle(thisangle-pi/2);//rotate clockwise 90°
-			}else{
-				angleLeft = clampAngle(thisangle-pi/2);//rotate counterclockwise 90°
-				angleRight = clampAngle(thisangle+pi/2);//rotate clockwise 90°			
+				leftflag = 0;
+
 			}
-			int pointleft = addpoint(0,set(thisposition[0]+radius*cos(angleLeft),thisposition[1],thisposition[2]+radius*sin(angleLeft))); 
-			int pointright= addpoint(0,set(thisposition[0]+radius*cos(angleRight),thisposition[1],thisposition[2]+radius*sin(angleRight))); 
-			if(find(allneigh, I_points[i_p])>0){push(pointleafleaf,I_points[i_p]);push(pointleafleaf,pointleft);push(pointleafleaf,pointright);}//push the points to the pointleafleaf[];
+			else{
+				angleLeft = clampAngle(thisangle-pi/2);//rotate counterclockwise 90°
+				angleRight = clampAngle(thisangle+pi/2);//rotate clockwise 90°	
+				leftflag = 1;		
+			}
+			vector left = set(thisposition[0]+radius*cos(angleLeft),thisposition[1],thisposition[2]+radius*sin(angleLeft));
+			vector right = set(thisposition[0]+radius*cos(angleRight),thisposition[1],thisposition[2]+radius*sin(angleRight));
+			//colorPass = setpointattrib(0, "uv", I_points[i_p], set(i_p,5,0), "set");
+
+			int pointleft = addpoint(0,left); 
+			int pointright= addpoint(0,right); 
+			
+			vector colorOne = {0,1,0.2};
+			if(leftflag==1){
+				int swap = pointleft;
+				pointleft = pointright;
+				pointright = swap;
+			}
+			int colorPass;
+			colorPass = setpointattrib(0, "uv", I_points[i_p], set(i_p,0.5,0), "set");
+			colorPass = setpointattrib(0, "Cd", pointleft, set(0.5,1.5,0), "set");
+			colorPass = setpointattrib(0, "uv", pointleft, set(i_p,1,0), "set");
+			colorPass = setpointattrib(0, "Cd", pointright, set(1,0,2), "set");
+			colorPass = setpointattrib(0, "uv", pointright, set(i_p,0,0), "set");
+			if(leftflag==1){
+				int swap = pointleft;
+				pointleft = pointright;
+				pointright = swap;
+			}
+			if(find(allneigh, I_points[i_p])>=0){ //POINT LEAF LEAF 
+				push(pointleafleaf,I_points[i_p]);push(pointleafleaf,pointleft);push(pointleafleaf,pointright);//push the points to the pointleafleaf[];
+				push(V_pll,thisposition);push(V_pll,left);push(V_pll,right);//push the points to an equivilent vector storage var V_pll[];
+			}
 			int v0 = addvertex(0,zig,pointleft);
 			int v1 = addvertex(0,zig,I_points[i_p]);
 			int v2 = addvertex(0,zig,pointright);
@@ -117,32 +160,41 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 		int face2 = addprim(0,"poly");
 		int v0,v1,v2,v3; //resulting polygons are quads.
 		if(g%2==0){
-			v3 = addvertex(0,face1,zigPoints[g+4]);
-			v2 = addvertex(0,face1,zigPoints[g+3]);
-			v1 = addvertex(0,face1,zigPoints[g  ]);
-			v0 = addvertex(0,face1,zigPoints[g-1]);
+			int v0,v1,v2,v3,v4,v5,v6,v7;
+			v0 = addvertex(0,face1,zigPoints[g+4]);
+			v1 = addvertex(0,face1,zigPoints[g+3]);
+			v2 = addvertex(0,face1,zigPoints[g  ]);
+			v3 = addvertex(0,face1,zigPoints[g-1]);
 
-			v3 = addvertex(0,face2,zigPoints[g+3]);
-			v2 = addvertex(0,face2,zigPoints[g+2]);
-			v1 = addvertex(0,face2,zigPoints[g+1]);
-			v0 = addvertex(0,face2,zigPoints[g  ]);
+			v4 = addvertex(0,face2,zigPoints[g+3]);
+			v5 = addvertex(0,face2,zigPoints[g+2]);
+			v6 = addvertex(0,face2,zigPoints[g+1]);
+			v7 = addvertex(0,face2,zigPoints[g  ]);
+			int pass;
+			pass = setvertexattrib(0, "Cd", face1, v0, {1,0,1}, "set");
+			pass = setvertexattrib(0, "uv", face2, v4, {0,50,0}, "set");
+
 		}
-		if(g%2==1){
-			v3 = addvertex(0,face1,zigPoints[g+2]);
-			v2 = addvertex(0,face1,zigPoints[g+3]);
-			v1 = addvertex(0,face1,zigPoints[g  ]);
-			v0 = addvertex(0,face1,zigPoints[g+1]);
+		if(g%2==1){			
+			int v0,v1,v2,v3,v4,v5,v6,v7;
+			v0 = addvertex(0,face1,zigPoints[g+2]);
+			v1 = addvertex(0,face1,zigPoints[g+3]);
+			v2 = addvertex(0,face1,zigPoints[g  ]);
+			v3 = addvertex(0,face1,zigPoints[g+1]);
 
-			v2 = addvertex(0,face2,zigPoints[g+3]);
-			v3 = addvertex(0,face2,zigPoints[g+4]);
-			v1 = addvertex(0,face2,zigPoints[g-1]);
-			v0 = addvertex(0,face2,zigPoints[g  ]);
+			v4 = addvertex(0,face2,zigPoints[g+3]);
+			v5 = addvertex(0,face2,zigPoints[g+4]);
+			v6 = addvertex(0,face2,zigPoints[g-1]);
+			v7 = addvertex(0,face2,zigPoints[g  ]);
+			int pass;
+			pass = setvertexattrib(0, "Cd", face1, v0, {0,0,0}, "set");
+			pass = setvertexattrib(0, "uv", face1, v4, {0,50,0}, "set");
 		}
 	}
 	removeprim(0,zig,0);
 	removeprim(0,i_prim,0);
 }
-printf("pointleafleaf: %f\\n",pointleafleaf);
+//printf("pointleafleaf: %f\\n",pointleafleaf);
 
 
 //CREATE STARS
@@ -151,8 +203,8 @@ for(int star=0;star<len(intersectionData);star++){
 	//sort angles.
 		//1. create array of angles.
 			string s_this_star[] = split(intersectionData[star],",");
-			vector this_origin = atoi(s_this_star[0]);
-			vector this_origin_P = point(0,"P",atoi(s_this_star[star]));
+			int this_origin = atoi(s_this_star[0]);
+			vector this_origin_P = point(0,"P",atoi(s_this_star[0]));
 			int I_medians[];
 			for(int m = 1;m<len(s_this_star);m++){
 				//int var = atoi(s_this_star[m]);
@@ -168,32 +220,85 @@ for(int star=0;star<len(intersectionData);star++){
 				float angle = atan2(dy,dx);
 				push(angles,angle);
 			}
-			printf("angles:%f\\n",angles);
 		//2. argsort angles.
 			int argOrder[] = argsort(angles);
-			printf("argOrder: %f\\n",argOrder);
-		//3. reorder points.
-			reorder(I_medians,argOrder);
-			reorder(angles,argOrder);
-			printf("I_medians_ordered: %f\\n",I_medians);  //not possible for three points to be out of order, but 3+n can.
+		//3. reorder points, and angles
+			I_medians = reorder(I_medians,argOrder);
+			angles= reorder(angles,argOrder);
 		//4. find angles between angles, and create points.
 			float subAngles[];
-			for(int a=0;a<len(angles);a++){
-				int address2 = (a+1)%len(angles);
-				float newA = clampAngle(angles[a]+angles[address2])/2;
-				push(subAngles,newA);
+			//subAngles. Attempt 2
+			for(int a=0;a<len(I_medians);a++){
+				int a2 = (a+1)%len(I_medians);
+				vector medialone = point(0,"P",I_medians[a])-this_origin_P;
+				vector medialtwo = point(0,"P",I_medians[a2])-this_origin_P;
+				float angleBisect = angleBetweenVectors2(medialone,medialtwo);
+				push(subAngles,angleBisect);
 			}
-			printf("\\n subAngles: %f\\n",subAngles);
-		//5. create polygons.
-			int subPoints = newprim(0,"polyline");
+			//printf("\\n subAngles: %f\\n",subAngles);
+		//5. add ring points.
+			//int subPoints = addprim(0,"polyline");
+			int intersectionRing[]; //pattern = regular, bisector, regular... etc.
+			int subIntersectionRing[];
 			for(int i =0; i<len(subAngles);i++){
+				float oinA = angles[i]; 
 				float inA = subAngles[i];
-				int p  = addpoint(0, set(this_origin_P[0]+ cos(inA)*radius,this_origin_P[1],this_origin_P[2]+sin(inA)*radius));
-				int v = addvertex(0,subPoints,p);
+				int p  = addpoint(0, set(this_origin_P[0]+ radius*1.414*cos(oinA),this_origin_P[1],this_origin_P[2]+radius*1.414*sin(oinA)));
+				push(intersectionRing,p);
+				p  = addpoint(0, set(this_origin_P[0]+ radius*1.414*cos(inA),this_origin_P[1],this_origin_P[2]+radius*1.414*sin(inA)));
+				push(subIntersectionRing,p);
 			}
-
-
-
-
+		//6. add all the polygons
+			for(int branch = 0; branch<len(I_medians);branch++){
+				int needle = I_medians[branch];
+				//printf("needle:%f\\n",needle);
+				int foundIndex = find(pointleafleaf,needle);
+					//if(foundIndex<0){printf("\\n %f not found\\n",I_medians[branch]);}
+					if(foundIndex>=0){
+						int middle = I_medians[branch];
+						vector middle_position = point(0,"P",middle);
+						int index1 =foundIndex+1;
+						int index2 =foundIndex+2;
+						int leafA = pointleafleaf[index1];
+						int leafB = pointleafleaf[index2];
+						vector pa = V_pll[index1];
+						vector pb = V_pll[index2];
+						int reversed = 0;
+						if(sidecheckXZ(middle_position,this_origin_P,pa)<0){ //if left is right,swap 
+							int swap = leafA;
+							leafA = leafB;
+							leafB = swap;
+							reversed = 1;
+						}
+						int starUV;
+						starUV = setpointattrib(0, "uv", intersectionRing[branch]		,set(middle+(1*reversed),0,0), "set");
+						starUV = setpointattrib(0, "uv", subIntersectionRing[branch-1]  ,set(middle+(1*reversed),0,0), "set");
+						starUV = setpointattrib(0, "uv", subIntersectionRing[branch]	,set(middle+(1*reversed),0,0), "set");
+						starUV = setpointattrib(0, "uv", subIntersectionRing[branch]	,set(middle+(1*reversed),0,0), "set");
+						//int previousSubAngle = subIntersectionRing[]
+						if(branch>-1){
+							int newpoly = addprim(0,"poly");
+							int t0 = addvertex(0,newpoly,middle);
+							int t1 = addvertex(0,newpoly,intersectionRing[branch]);
+							int t2 = addvertex(0,newpoly,subIntersectionRing[branch]);
+							int t3 = addvertex(0,newpoly,leafB);
+							newpoly = addprim(0,"poly");
+								t0 = addvertex(0,newpoly,subIntersectionRing[branch]);
+								t1 = addvertex(0,newpoly,intersectionRing[branch]);
+								t2 = addvertex(0,newpoly,this_origin);
+							newpoly = addprim(0,"poly");
+								t0 = addvertex(0,newpoly,middle);
+								t3 = addvertex(0,newpoly,leafA);
+								t2 = addvertex(0,newpoly,subIntersectionRing[branch-1]);
+								t1 = addvertex(0,newpoly,intersectionRing[branch]);
+							newpoly = addprim(0,"poly");
+								t0 = addvertex(0,newpoly,subIntersectionRing[branch-1]);
+								t2 = addvertex(0,newpoly,this_origin);
+								int setorigin2;
+								setorigin2 = setvertexattrib(0, "uv", newpoly,  t2, set(middle+3,0.5,0), "set");
+								t1 = addvertex(0,newpoly,intersectionRing[branch]);
+						}
+					}
+			}
 }
 
