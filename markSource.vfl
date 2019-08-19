@@ -1,0 +1,8 @@
+//marks vertex as source if it is the first point in a curve.
+int totalprims = @numprim;
+for(int i=0;i<totalprims;i++){
+    int points[] = primpoints(0,i);
+    int firstpoint = points[0];
+    //if point is first in prim, set as source!
+    int pass = setvertexattrib(0, "source", i, firstpoint, 1, "set");
+}

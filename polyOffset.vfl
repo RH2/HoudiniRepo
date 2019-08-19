@@ -33,7 +33,7 @@ float sidecheckXZ(vector s; vector e; vector p){ //+=left
 	return result;
 }
 
-float diameter = 0.2;
+float diameter = 0.14;
 float radius = diameter/2;
 float pi = 3.14159264;
 float tau = 3.14159264*2;
@@ -129,9 +129,9 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 			}
 			int colorPass;
 			colorPass = setpointattrib(0, "uv", I_points[i_p], set(i_p,0.5,0), "set");
-			colorPass = setpointattrib(0, "Cd", pointleft, set(0.5,1.5,0), "set");
+			//colorPass = setpointattrib(0, "Cd", pointleft, set(0.5,1.5,0), "set");
 			colorPass = setpointattrib(0, "uv", pointleft, set(i_p,1,0), "set");
-			colorPass = setpointattrib(0, "Cd", pointright, set(1,0,2), "set");
+			//colorPass = setpointattrib(0, "Cd", pointright, set(1,0,2), "set");
 			colorPass = setpointattrib(0, "uv", pointright, set(i_p,0,0), "set");
 			if(leftflag==1){
 				int swap = pointleft;
@@ -240,13 +240,20 @@ for(int star=0;star<len(intersectionData);star++){
 			//int subPoints = addprim(0,"polyline");
 			int intersectionRing[]; //pattern = regular, bisector, regular... etc.
 			int subIntersectionRing[];
+			vector interRing_P[];
+			vector subinterRing_P[];
 			for(int i =0; i<len(subAngles);i++){
 				float oinA = angles[i]; 
 				float inA = subAngles[i];
-				int p  = addpoint(0, set(this_origin_P[0]+ radius*1.414*cos(oinA),this_origin_P[1],this_origin_P[2]+radius*1.414*sin(oinA)));
+				vector mainposition = set(this_origin_P[0]+ radius*1.414*cos(oinA),this_origin_P[1],this_origin_P[2]+radius*1.414*sin(oinA));
+				vector subposition = set(this_origin_P[0]+ radius*1.414*cos(inA),this_origin_P[1],this_origin_P[2]+radius*1.414*sin(inA));
+				int p  = addpoint(0,mainposition);
 				push(intersectionRing,p);
-				p  = addpoint(0, set(this_origin_P[0]+ radius*1.414*cos(inA),this_origin_P[1],this_origin_P[2]+radius*1.414*sin(inA)));
+				p  = addpoint(0,subposition);
 				push(subIntersectionRing,p);
+				push(interRing_P,mainposition);
+				push(subinterRing_P,subposition);
+
 			}
 		//6. add all the polygons
 			for(int branch = 0; branch<len(I_medians);branch++){
@@ -256,6 +263,7 @@ for(int star=0;star<len(intersectionData);star++){
 					//if(foundIndex<0){printf("\\n %f not found\\n",I_medians[branch]);}
 					if(foundIndex>=0){
 						int middle = I_medians[branch];
+						printf("middle:%f",middle);
 						vector middle_position = point(0,"P",middle);
 						int index1 =foundIndex+1;
 						int index2 =foundIndex+2;
@@ -263,41 +271,96 @@ for(int star=0;star<len(intersectionData);star++){
 						int leafB = pointleafleaf[index2];
 						vector pa = V_pll[index1];
 						vector pb = V_pll[index2];
-						int reversed = 0;
+						int reversed = -1;
 						if(sidecheckXZ(middle_position,this_origin_P,pa)<0){ //if left is right,swap 
 							int swap = leafA;
 							leafA = leafB;
 							leafB = swap;
 							reversed = 1;
 						}
-						int starUV;
-						starUV = setpointattrib(0, "uv", intersectionRing[branch]		,set(middle+(1*reversed),0,0), "set");
-						starUV = setpointattrib(0, "uv", subIntersectionRing[branch-1]  ,set(middle+(1*reversed),0,0), "set");
-						starUV = setpointattrib(0, "uv", subIntersectionRing[branch]	,set(middle+(1*reversed),0,0), "set");
-						starUV = setpointattrib(0, "uv", subIntersectionRing[branch]	,set(middle+(1*reversed),0,0), "set");
+						//lets add polygons! 
+
+						//quad 1:
+						//find original median ptnum.... 
+						int uvadd;
+						int t0,t1,t2,t3;
+						int jl;
+						float offset = middle;
+						if(branch==0){jl = len(subinterRing_P)-1;}else{jl=branch-1;}
+						int junctionLeft  =addpoint(0,subinterRing_P[jl]);		uvadd = setpointattrib(0,"uv", junctionLeft,set(offset,1,0),"set");
+						int mid           =addpoint(0,interRing_P[branch]);  	uvadd = setpointattrib(0,"uv", mid,			set(offset,0.5,0),"set");
+						int junctionRight =addpoint(0,subinterRing_P[branch]);  uvadd = setpointattrib(0,"uv", junctionRight,set(offset,0,0),"set");
+						int borgin		  =addpoint(0,this_origin_P);			uvadd = setpointattrib(0,"uv", junctionRight,set(offset*2,0.5,0),"set");	
+
+						int quadLeft  = addprim(0,"poly"); 
+						int quadRight = addprim(0,"poly");
+						int triLeft   = addprim(0,"poly");
+						int triRight  = addprim(0,"poly");
+
+						t0 = addvertex(0,quadLeft,middle);
+						t1 = addvertex(0,quadLeft,mid);
+						t2 = addvertex(0,quadLeft,junctionRight);
+						t3 = addvertex(0,quadLeft,leafB);
+
+						t0 = addvertex(0,quadRight,junctionLeft);
+						t1 = addvertex(0,quadRight,mid);						
+						t2 = addvertex(0,quadRight,middle);
+						t3 = addvertex(0,quadRight,leafA);
+
+						t0 = addvertex(0,triLeft,junctionLeft);
+						t1 = addvertex(0,triLeft,mid);						
+						t2 = addvertex(0,triLeft,middle);						
+
+						t0 = addvertex(0,triRight,junctionLeft);
+						t1 = addvertex(0,triRight,mid);						
+						t2 = addvertex(0,triRight,middle);
+						
+
+
+
+
+
+
+
+
+
+
+						//int starUV;
+						//starUV = setpointattrib(0, "uv", intersectionRing[branch]		,set(middle+(2*reversed),0,0), "set");
+						//starUV = setpointattrib(0, "uv", subIntersectionRing[branch-1]  ,set(middle+(2*reversed),1,0), "set");
+						//starUV = setpointattrib(0, "uv", subIntersectionRing[branch]	,set(middle+(2*reversed),0,0), "set");
+						//starUV = setpointattrib(0, "uv", subIntersectionRing[branch]	,set(middle+(2*reversed),0,0), "set");
+						//starUV = setpointattrib(0, "uv", this_origin					,set(middle+(3*reversed),0.5,0), "set");
 						//int previousSubAngle = subIntersectionRing[]
-						if(branch>-1){
-							int newpoly = addprim(0,"poly");
-							int t0 = addvertex(0,newpoly,middle);
-							int t1 = addvertex(0,newpoly,intersectionRing[branch]);
-							int t2 = addvertex(0,newpoly,subIntersectionRing[branch]);
-							int t3 = addvertex(0,newpoly,leafB);
-							newpoly = addprim(0,"poly");
-								t0 = addvertex(0,newpoly,subIntersectionRing[branch]);
-								t1 = addvertex(0,newpoly,intersectionRing[branch]);
-								t2 = addvertex(0,newpoly,this_origin);
-							newpoly = addprim(0,"poly");
-								t0 = addvertex(0,newpoly,middle);
-								t3 = addvertex(0,newpoly,leafA);
-								t2 = addvertex(0,newpoly,subIntersectionRing[branch-1]);
-								t1 = addvertex(0,newpoly,intersectionRing[branch]);
-							newpoly = addprim(0,"poly");
-								t0 = addvertex(0,newpoly,subIntersectionRing[branch-1]);
-								t2 = addvertex(0,newpoly,this_origin);
-								int setorigin2;
-								setorigin2 = setvertexattrib(0, "uv", newpoly,  t2, set(middle+3,0.5,0), "set");
-								t1 = addvertex(0,newpoly,intersectionRing[branch]);
-						}
+						//if(branch>-1){
+						//	int setUV;
+						//	int newpoly = addprim(0,"poly");
+						//	int t0 = addvertex(0,newpoly,middle);
+						//	int t1 = addvertex(0,newpoly,intersectionRing[branch]);
+						//	int t2 = addvertex(0,newpoly,subIntersectionRing[branch]);
+						//	int t3 = addvertex(0,newpoly,leafB);
+						//		setUV = setvertexattrib(0, "uv", newpoly,  t1, set(middle+(2*reversed*-1),0.5,0), "set");
+						//		setUV = setvertexattrib(0, "uv", newpoly,  t2, set(middle+(2*reversed*-1),0,0), "set");
+						//	newpoly = addprim(0,"poly");//centertriangle
+						//		t0 = addvertex(0,newpoly,subIntersectionRing[branch]);
+						//		t1 = addvertex(0,newpoly,intersectionRing[branch]);
+						//		t2 = addvertex(0,newpoly,this_origin);
+						//	newpoly = addprim(0,"poly");
+						//		t0 = addvertex(0,newpoly,middle);
+						//		t3 = addvertex(0,newpoly,leafA);
+						//		t2 = addvertex(0,newpoly,subIntersectionRing[branch-1]);
+						//		t1 = addvertex(0,newpoly,intersectionRing[branch]);
+						//		setUV = setvertexattrib(0, "uv", newpoly,  t2, set(middle+(2*reversed*-1),1,0), "set");
+						//		setUV = setvertexattrib(0, "uv", newpoly,  t1, set(middle+(2*reversed*-1),0.5,0), "set");
+						//	newpoly = addprim(0,"poly");//centertriangle
+						//		t0 = addvertex(0,newpoly,subIntersectionRing[branch-1]);
+						//		t1 = addvertex(0,newpoly,this_origin);
+						//		t2 = addvertex(0,newpoly,intersectionRing[branch]);
+						//		setUV = setvertexattrib(0, "uv", newpoly,  t0, set(middle+(2*reversed*-1),10,0), "set");
+						//		setUV = setvertexattrib(0, "uv", newpoly,  t2, set(middle+(2*reversed*-1),10,0), "set");
+						//		setUV = setvertexattrib(0, "uv", newpoly,  t1, set(middle+(3*reversed*-1),10,0), "set");
+						//	printf("%f",setUV);
+						//}
 					}
 			}
 }
