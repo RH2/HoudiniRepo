@@ -1,0 +1,22 @@
+//loop through each primitive.
+int enumPrim = nprimitives(0);
+for (int ep = 0; ep<enumPrim; ep++){
+    //loop through each vertex
+    int enumVert = primvertexcount(0,ep);
+    for(int ev = 0; ev<enumVert;ev++){
+    	if(ev!=0){
+	        int v = vertexindex(0, ep, ev); //CONVERTS TO LINEAR VERTEX
+	        int p = vertexpoint(0,v);
+	        int vprev = vertexindex(0, ep, ev-1);
+	        int pprev = vertexpoint(0,vprev);
+	        vector Loc = vertex(0,"P",v);
+	        vector Loc2 = vertex(0,"P",vprev);
+
+	        float distance = length(loc-loc2);
+	        int pass = setvertexattrib(0,"dist",ep,ev, distance, "set");
+    	}
+    	else{//distance = 0 
+    		int pass = setvertexattrib(0,"dist",ep,ev, 0.0, "set");
+    	}       
+    }    
+}
