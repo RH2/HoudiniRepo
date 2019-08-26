@@ -11,8 +11,9 @@ for (int ep = 0; ep<enumPrim; ep++){
 	        int pprev = vertexpoint(0,vprev);
 	        vector Loc = vertex(0,"P",v);
 	        vector Loc2 = vertex(0,"P",vprev);
+	        vector c= Loc-Loc2;
 
-	        float distance = length(loc-loc2);
+	        float distance = length(c);
 	        int pass = setvertexattrib(0,"dist",ep,ev, distance, "set");
     	}
     	else{//distance = 0 
