@@ -70,7 +70,7 @@ for(int p=0;p<npoints(0);p++){  //gather intersections
 		//intersectionData+=S_output;
 	}
 }
-//printf("intersectionData: %f\\n",intersectionData);
+printf("intersectionData: %f\\n",intersectionData);
 //printf("intersectionData[0]: %f\\n",intersectionData[0]);
 //printf("intersectionData[1]: %f\\n",intersectionData[1]);
 //printf("allneigh: %f\\n",allneigh);
@@ -158,7 +158,6 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 		if(g+4>len(zigPoints)){break;}
 		int face1 = addprim(0,"poly");
 		int face2 = addprim(0,"poly");
-		int v0,v1,v2,v3; //resulting polygons are quads.
 		if(g%2==0){
 			int v0,v1,v2,v3,v4,v5,v6,v7;
 			v0 = addvertex(0,face1,zigPoints[g+4]);
@@ -199,6 +198,7 @@ for(int i_prim=0;i_prim<numprim;i_prim++){
 
 //CREATE STARS
 for(int star=0;star<len(intersectionData);star++){
+//for(int star=0;star<1;star++){
 
 	//sort angles.
 		//1. create array of angles.
@@ -238,8 +238,8 @@ for(int star=0;star<len(intersectionData);star++){
 			//printf("\\n subAngles: %f\\n",subAngles);
 		//5. add ring points.
 			//int subPoints = addprim(0,"polyline");
-			int intersectionRing[]; //pattern = regular, bisector, regular... etc.
-			int subIntersectionRing[];
+			//int intersectionRing[]; //pattern = regular, bisector, regular... etc.
+			//int subIntersectionRing[];
 			vector interRing_P[];
 			vector subinterRing_P[];
 			for(int i =0; i<len(subAngles);i++){
@@ -247,23 +247,23 @@ for(int star=0;star<len(intersectionData);star++){
 				float inA = subAngles[i];
 				vector mainposition = set(this_origin_P[0]+ radius*1.414*cos(oinA),this_origin_P[1],this_origin_P[2]+radius*1.414*sin(oinA));
 				vector subposition = set(this_origin_P[0]+ radius*1.414*cos(inA),this_origin_P[1],this_origin_P[2]+radius*1.414*sin(inA));
-				int p  = addpoint(0,mainposition);
-				push(intersectionRing,p);
-				p  = addpoint(0,subposition);
-				push(subIntersectionRing,p);
+				//int p  = addpoint(0,mainposition);
+				//push(intersectionRing,p);
+				//p  = addpoint(0,subposition);
+				//push(subIntersectionRing,p);
 				push(interRing_P,mainposition);
 				push(subinterRing_P,subposition);
 
 			}
 		//6. add all the polygons
 			for(int branch = 0; branch<len(I_medians);branch++){
+			//for(int branch = 0; branch<1;branch++){
 				int needle = I_medians[branch];
 				//printf("needle:%f\\n",needle);
 				int foundIndex = find(pointleafleaf,needle);
 					//if(foundIndex<0){printf("\\n %f not found\\n",I_medians[branch]);}
 					if(foundIndex>=0){
 						int middle = I_medians[branch];
-						printf("middle:%f",middle);
 						vector middle_position = point(0,"P",middle);
 						int index1 =foundIndex+1;
 						int index2 =foundIndex+2;
@@ -282,38 +282,66 @@ for(int star=0;star<len(intersectionData);star++){
 
 						//quad 1:
 						//find original median ptnum.... 
-						int uvadd;
 						int t0,t1,t2,t3;
 						int jl;
-						float offset = middle;
 						if(branch==0){jl = len(subinterRing_P)-1;}else{jl=branch-1;}
-						int junctionLeft  =addpoint(0,subinterRing_P[jl]);		uvadd = setpointattrib(0,"uv", junctionLeft,set(offset,1,0),"set");
-						int mid           =addpoint(0,interRing_P[branch]);  	uvadd = setpointattrib(0,"uv", mid,			set(offset,0.5,0),"set");
-						int junctionRight =addpoint(0,subinterRing_P[branch]);  uvadd = setpointattrib(0,"uv", junctionRight,set(offset,0,0),"set");
-						int borgin		  =addpoint(0,this_origin_P);			uvadd = setpointattrib(0,"uv", junctionRight,set(offset*2,0.5,0),"set");	
+
+
+						vector jl_uv		=set(1*reversed,0,0);
+						vector jr_uv		=set(1*reversed,1,0);
+						vector mid_uv		=set(1*reversed,0.5,0);
+						vector borgin_uv	=set(2*reversed,0.5,0);
+						if(reversed==1){
+							vector vswap=jl_uv;
+							jl_uv=jr_uv;
+							jr_uv=vswap;
+						}
+
+						//vector printuv;
+						//printuv = point(0,"P",73);
+						//printf("73uv:%f",printuv);
+						printf("middle:%f",middle);
+						printf("jl_uv:%fjr_uv:%fmid_uv:%forigin_uv:%f\\n",jl_uv,jr_uv,mid_uv,borgin_uv);
+
+
+
+																			int uvadd;
+						int junctionLeft  =addpoint(0,subinterRing_P[jl]);		uvadd = setpointattrib(0,"uv", junctionLeft, jl_uv,"set");
+						int mid           =addpoint(0,interRing_P[branch]);  	uvadd = setpointattrib(0,"uv", mid,			 mid_uv,"set");
+						int junctionRight =addpoint(0,subinterRing_P[branch]);  uvadd = setpointattrib(0,"uv", junctionRight,jr_uv,"set");
+						int borgin		  =addpoint(0,this_origin_P);			uvadd = setpointattrib(0,"uv", junctionRight,borgin_uv,"set");	
 
 						int quadLeft  = addprim(0,"poly"); 
 						int quadRight = addprim(0,"poly");
 						int triLeft   = addprim(0,"poly");
 						int triRight  = addprim(0,"poly");
 
+						//int jpass;
 						t0 = addvertex(0,quadLeft,middle);
 						t1 = addvertex(0,quadLeft,mid);
 						t2 = addvertex(0,quadLeft,junctionRight);
 						t3 = addvertex(0,quadLeft,leafB);
+
+						//jpass = setvertexattrib(0, "uv", quadLeft, t1, mid_uv, "set");
+						//jpass = setvertexattrib(0, "uv", quadLeft, t2, jr_uv, "set");
+
 
 						t0 = addvertex(0,quadRight,junctionLeft);
 						t1 = addvertex(0,quadRight,mid);						
 						t2 = addvertex(0,quadRight,middle);
 						t3 = addvertex(0,quadRight,leafA);
 
-						t0 = addvertex(0,triLeft,junctionLeft);
-						t1 = addvertex(0,triLeft,mid);						
-						t2 = addvertex(0,triLeft,middle);						
+						//jpass = setvertexattrib(0, "uv", quadLeft, t0, jl_uv, "set");
+						//jpass = setvertexattrib(0, "uv", quadLeft, t1, mid_uv, "set");
+						//jpass = setvertexattrib(0, "uv", quadLeft, t3, jl_uv, "set");
 
-						t0 = addvertex(0,triRight,junctionLeft);
+						t0 = addvertex(0,triLeft,junctionLeft);
+						t1 = addvertex(0,triLeft,borgin);						
+						t2 = addvertex(0,triLeft,mid);						
+
+						t0 = addvertex(0,triRight,junctionRight);
 						t1 = addvertex(0,triRight,mid);						
-						t2 = addvertex(0,triRight,middle);
+						t2 = addvertex(0,triRight,borgin);
 						
 
 
