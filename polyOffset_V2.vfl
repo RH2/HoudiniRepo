@@ -1,4 +1,3 @@
-//Checkpoint: 2-9-2019 2:15PM
 //CUSTOMEXPAND
 float clampAngle(float inputAngle){
     float x = inputAngle/3.14159265;
@@ -38,96 +37,73 @@ float pi = 3.14159264;
 float tau = 3.14159264*2;
 
 
-int I_donotsweep[]; //points to exclude from sweeps.
-int I_remappedIntersections[]; //datastructure: pointIndex,V_remappedIntersection[i],
-vector V_remappedIntersection[]; //new junction locations?
-
-
-//SETUP--
-//FIRST WE REMOVE PRIMITIVES WHO'S FIRST AND LAST VERTEX ARE TOO CLOSE, AND MERGE ENDPOINTS.
-int primnum = nprimitives(0);
-for(int primI=0;primI<primnum;primI++){
-	//get last and first point
-	int enumVert = primvertexcount(0,primI);
-	int vint = vertexindex(0, primI, 0);				//initial vertex
-	int vtrm = vertexindex(0, primI, enumVert-1); //terminal vertex
-	vector locint = vertex(0,"P",vint);
-	vector loctrm = vertex(0,"P",vtrm);
-	vector delta = locint-loctrm;
-	float distance = length(delta);
-	if(distance<radius){//merge intersections if both ends have more than 3 neighbors, else simply remove.
-		int pint = vertexpoint(0,vint);
-		int ptrm = vertexpoint(0,vtrm);
-		//removeprim(0,primI,1);
-		int countint = neighbourcount(0,pint);
-		int counttrm = neighbourcount(0,ptrm); // <<WHY ALWAYS ZERO?
-		if(countint>=3&&counttrm>=3){ //if both ends are intersections.
-			printf("countint>=3&&counttrm>=3");
-			vector locaverage = (locint+loctrm/2);//middle location
-
-			int nint[] = neighbours(0,pint);	//FOUR ARRAYS CONTAINING INDEX AND OFFSET INFO.
-			float distint[];
-			int ntrm[] = neighbours(0,ptrm);
-			float disttrm[];
-
-			for(int n = 0; n<len(nint);n++){	//change in distance to new intersection — start junction
-				vector locneighbour = point(0,"P",nint[n]);
-				vector distoriginal =	length(locneighbour-locint);
-				vector distnew			=	length(locneighbour-locaverage);
-				float  newoffset = distoriginal-distnew;
-				push(distint,newoffset);
-			}
-			for(int n = 0; n<len(ntrm);n++){	//change in distance to new intersection — end junction
-				vector locneighbour = point(0,"P",ntrm[n]);
-				vector distoriginal =	length(locneighbour-locint);
-				vector distnew			=	length(locneighbour-locaverage);
-				float  newoffset = distoriginal-distnew;
-				push(disttrm,newoffset);
-			}
-			
-			for(int dp=0; dp < enumVert; dp++){ //mark each point on curve as donotsweep.
-				int thisdVertex = vertexindex(0,primI, dp);
-				int thisdPoint = vertexpoint(0,thisdVertex);
-				if(find(donotsweep,thisdPoint)<0){ //AVOID PUSHING SAME POINT MULTIPLE TIMES.
-					push(donotsweep,thisdPoint);
-				}
-			}
-
-			 
-			//array one neightbour-point1, reference-index-to-float-array, neighbour-point, reference-index-to-float-array
-
-
-
-
-
-
-		}
+int originalJunctions[];
+//record points with more than 3 neighbours
+for(int nCheck=0; nCheck<npoints(0);nCheck++){
+	if(neighbourcount(0,nCheck)>2){
+		push(originalJunctions,nCheck);
 	}
 }
 
+int pointsTooClose[]; //AKA DONOTSWEEP
+//mark points based on proximity to all 3+ intersections
+for(int pProxCheck=0; pProxCheck<npoints(0);pProxCheck++){
+		vector locA = point(0,"P",pProxCheck);
+		for(int junc=0;junc<len(originalJunctions);junc++){
+			vector locB =point(0,"P",originalJunctions[junc]);
+			locB = locA-locB;
+			float dist = distance(locB);
+			if(dist<radius){
+				push(pointsTooClose,pProxCheck);
+				break;//only needs to be marked once.
+			} 
+		}
+}
 
-
-
-
-
-
-//SECOND WE CREATE A LOOKUP TABLE OF ALL INTERSECTIONS AND POINTS.
-int cect[]; 
-string jpoint[];
-for(int inipoints=0;inipoints<npoints(0);inipoints++){
-	if(neighbourcount(0,inipoints)>2){
-		push(cect,inipoints);
+int pointlessPrims[];
+//mark primitives active or inactve
+for(int pPrimCheck=0;pPrimCheck<nprimitives(0);pPrimCheck++){
+	int numberOfActivePoints = 0;
+	int pPoints[] = primpoints(0,pPrimCheck);
+	for(int pp=0;pp<len(pPoints);pp++){
+		if(find(pointsTooClose,pp)<0){
+			numberOfActivePoints++;//if point is not found, then it is active
+			break;//stop searching after first one is found.
+		}
 	}
-}//printf("cect:%f",cect);
-//THEN WE ADD POINTS AND LINK THEM TO INTERSECTION POINTS.
-	//+MECHANIC FOR REMOVING POINTS IF THEY ARE WITHIN RADIUS OF INTERSECTION. 
-	//+MECHANIC FOR JOINING INTERSECTIONS
+	if(numberOfActivePoints==0){
+		push(pointlessPrims,pPrimCheck);//if prim has any active points, then it is active.
+	}
+}
 
+//build new metajunctions from existing junctions.
+//build set of junctions based on adjacent pointless primitives.
 
+//ATTEMPT1
+//create two sets for each intersection family.
+	//int branchActive[];
+	//int branchInactive[];
+	//for(int oj=0;oj<len(originalJunctions);oj++){
+	//	int thisOriginalJunction = originalJunctions[oj];
+	//	int connected[] = pointprims(0, thisOriginalJunction);
+	//	for(int cc=0; cc<len(connected); cc++){
+	//		int thisConnection = connected[cc];
+	//		if(find(pointlessPrims,thisConnection)>-1){
+	//			if(find(branchInactive,thisConnection)>-1){push(branchInactive,thisConnection);}
+	//		}
+	//		else{
+	//			if(find(branchActive,thisConnection)>-1){push(branchActive,thisConnection);}
+	//		}
+	//	}
+	//	for(int de=0; de<len(branchInactive);de++){
+	//
+	//	}
+	//}
 
+//ATTEMPT2
 
+//Create a list of pointlessPrimitives that touch.
+	//get list of pointlessprimitives
+	//get first and last point (first and last can be the same)
+	//
 
-
-//GENERATE GEO SWEEPS
-
-//GENERATE GEO INTERSECTION
