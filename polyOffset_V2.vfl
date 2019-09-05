@@ -1,5 +1,6 @@
-//CUSTOMEXPAND
-float clampAngle(float inputAngle){
+//HEADER: CurveExpand
+//customFunctions
+	float clampAngle(float inputAngle){
     float x = inputAngle/3.14159265;
     x=x%2;
     if(x>1){
@@ -10,31 +11,53 @@ float clampAngle(float inputAngle){
     }
     x = x*3.14159265;
     return x;
-}
-void mergeArray(int array1[];int array2[]){
+	}
+	void mergeArray(int array1[];int array2[]){
         foreach(int a2; array2){
                 if(find(array1,a2)<0){
                         push(array1, a2);
                 }
         }
-}
-float angleBetweenVectors2(vector a; vector b){
+	}
+	float angleBetweenVectors2(vector a; vector b){
         a = normalize(a*{1,0,1});
         b = normalize(b*{1,0,1});
         vector c = normalize(a+b);
 
         float result = atan2(c[2],c[0]);
         return(result);
-}
-float sideCheckXZ(vector s; vector e; vector p){ //+=left
+	}
+	float sideCheckXZ(vector s; vector e; vector p){ //+=left
         float result = (e[0]-s[0])*(p[2]-s[2])  -  (e[2]-s[2])*(p[0]-s[0]);
         return result;
-}
-
-float diameter = 50.0;
-float radius = diameter/2;
-float pi = 3.14159264;
-float tau = 3.14159264*2;
+	}
+	int I_result[];		void Specialdecode1(int i; string S_input; int output[]){
+    output = {};
+    string L[] = split(S_input,"L");
+    if(i>len(L)-1){output = {-1};}
+    string splits[] = split(L[i],",");
+    //encode to integer array
+    foreach(string s; splits){
+        push(output, atoi(s));
+    }
+	} 
+	void addIntegerToStringSet(int i; string Set){
+	int intarray[];
+	string splits[] = split(Set, ",");
+	if 
+	foreach(string s; splits){
+		push(intarray,atoi(s));
+	}
+	if(find(intarray,i)<0){
+		if(Set[-1]!=","){Set+=","};
+		Set+=itoa(i);
+	}
+	}
+//constants
+	float diameter = 50.0;
+	float radius = diameter/2;
+	float pi = 3.14159264;
+	float tau = 3.14159264*2;
 
 
 int originalJunctions[];
@@ -79,7 +102,9 @@ for(int pPrimCheck=0;pPrimCheck<nprimitives(0);pPrimCheck++){
 //limit scope
 int specialIntersections[];
 string reg[];//regular //primitive indice that needs new meta.
+string SB_regS[];//STRING BOOL, is this point a source?
 string rem[];//remove  //primitives that will no longer exist.
+string SB_remS[];//STRING BOOL, is this point a source?
 for(int j=0;j<len(originalJunctions);j++){//each junction
 	int thisJunction = originalJunctions[j];
 	int theseNeighbours[] = neighbours(0,thisJunction);//each point connected to junction.
@@ -101,55 +126,106 @@ for(int j=0;j<len(originalJunctions);j++){//each junction
 	}
 }
 
-string shares[]; //UNUSED //"N","metaLocIndex","branchPrimIndex",...
-vector metaLoc[];//UNUSED //
-
 //foreach special intersection (steps 5,6,7)
 	//1. dynamic group based on matching rems
 	//2. union reg
-	//3. connecting point?
+	//3. connecting point? source or not? (important for calculating distance)
 	//4. location
 	//5. uv difference
+string shares[]; //UNUSED //"N","*V_sharedPosition[]","branchPrimIndex",...
+vector V_sharedPosition[];//UNUSED //
 
-for(int si=0; si<len(specialIntersections);si++){ //EVERY POINTLESS POLY USUALLY HAS TWO JUNCTIONS.
-	int thisSpecialIntersection = specialIntersections[si];//for each sepcial intersection
-	string thisReg[] = split(reg[si],",");
-	string thisRem[] = split(rem[si],",");
-	int I_thisReg[];
-	int I_thisRem[];
-	//convert reg and rem to integer arrays
-	for(int regindex = 0; regindex<len(thisReg);regindex++){
-		push(I_thisReg, atoi(thisReg[regindex]));
-	}
-	for(int remindex = 0; remindex<len(thisRem);remindex++){
-		push(I_thisRem, atoi(thisRem[remindex]));
-	}
 
-	//compare against all other special intersections (N-next to N-term).
-	for(int oi=si+1; oi<len(specialIntersections);oi++){
-		string otherReg[] = split(reg[oi],",");
-		string otherRem[] = split(rem[oi],",");
-		int I_otherReg[];
-		int I_otherRem[];
-		//convert reg and rem to integer arrays
-		for(int regindex = 0; regindex<len(otherReg);regindex++){
-			push(I_otherReg, atoi(otherReg[regindex]));
+
+
+
+string sharesSimple[]; //Jpoint sets.  EG: "{1,2,8,54","101,102,103"} < pointlessprims that share starts or ends with or more of each other. 
+foreach(int i=0;i<len(pointlessPrims);i++){
+	int edge = pointlessPrims[i];
+	int rawPoints[] = primpoints(0,edge);//get first and last point.	
+	int initialPoint 	= rawPoints[0]; 
+	int lastPoint 		= rawPoints[-1];
+	string s_initialPoint = ","+itoa(initialPoint)+","; //convert to usable needle. string must begin and end with ","
+	string s_lastPoint = ","+itoa(lastPoint)+",";				//",x,"
+	//Check sharesSimple for a set that contains one of these two points.
+	// if none are found, create a new entry.
+	foreach(string share; sharesSimple){
+	foreach(int j =0; j<len(sharesSimple);j++){
+		string share = sharesSimple[j];
+		int fresult[] = find(share, s_initialPoint);
+		int fresult2[] = find(share, s_lastPoint);
+		int totalLen = len(fresult)+len(fresult2);
+		if(totalLen>0){ //if found, add
+			sharesSimple[j]+= itoa(edge)+",";
 		}
-		for(int remindex = 0; remindex<len(otherRem);remindex++){
-			push(I_thisRem, atoi(otherRem[remindex]));
+		else{ //create new share
+			string newEntry = ","+itoa(edge)+",";
+			push(sharesSimple,newEntry);
 		}
 	}
+}
 
+
+//for(int si=0; si<len(specialIntersections);si++){ //EVERY POINTLESS POLY USUALLY HAS TWO JUNCTIONS.
+	//	int thisSpecialIntersection = specialIntersections[si];
+	//	string thisReg[] = split(reg[si],",");
+	//	string thisRem[] = split(rem[si],",");
+	//	int I_thisReg[];
+	//	int I_thisRem[];
+	//	//convert reg and rem to integer arrays
+	//		for(int regindex = 0; regindex<len(thisReg);regindex++){
+	//			push(I_thisReg, atoi(thisReg[regindex]));
+	//		}
+	//		for(int remindex = 0; remindex<len(thisRem);remindex++){
+	//			push(I_thisRem, atoi(thisRem[remindex]));
+	//		}
+	//
+	//	int matches = 0;
+	//	for(int oi=0; oi<len(specialIntersections);oi++){ //Compare to all other junctions.
+	//		if(oi!=si){
+	//			string otherReg[] = split(reg[oi],",");
+	//			string otherRem[] = split(rem[oi],",");
+	//			int I_otherReg[];
+	//			int I_otherRem[];
+	//			//convert reg and rem to integer arrays
+	//			for(int regindex2 = 0; regindex2<len(otherReg);regindex2++){
+	//				push(I_otherReg, atoi(otherReg[regindex2]));
+	//			}
+	//			for(int remindex2 = 0; remindex2<len(otherRem);remindex2++){
+	//				push(I_otherRem, atoi(otherRem[remindex2]));
+	//			}
+	//	
+	//			//comparisons here. if one matches, combine both sets.
+	//			for(int comparisonIterator=0;comparisonIterator<len(I_otherRem);comparisonIterator++){
+	//				int thisCompRem = I_otherRem[comparisonIterator];
+	//				if(find(I_thisRem,thisCompRem)>=0){matches=1;break;}
+	//			}
+	//			if(matches==1){//find a string containing our integer pair, before creating a new entry. Else, append to existing string.
+	//				int shareExists = -1;
+	//				for(int stringSearch=0;stringSearch<len(sharesPrototype);stringSearch++){
+	//					string thisString = sharesPrototype[stringSearch];
+	//					string breaks[] = split(thisString,",");
+	//					int I_breaks[];
+	//					foreach (string x; breaks){
+	//					  push(I_breaks,atoi(x));
+	//					}
+	//					if(find(I_breaks,si)>-1||find(I_breaks,oi)>-1){shareExists = stringSearch;}
+	//				}				
+	//				if(shareExists==-1){
+	//					string S_prototype = itoa(si)+","+itoa(oi);
+	//					push(sharesPrototype, S_prototype);
+	//				}
+	//				else{
+	//					sharesPrototype[shareExists]+=""
+	//				}
+	//
+	//			}
+	//		}
+	//	}
 
 	//when we find another junction, sharing one of the rems — we create a new junction and continue searching
 	//At the end of the search, if the metajunction (shares[]) is empty, we do not push.
-
-
-
-
-
-
-}
+//}
 
 
 
