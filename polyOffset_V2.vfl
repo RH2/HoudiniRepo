@@ -132,7 +132,7 @@ for(int j=0;j<len(originalJunctions);j++){//each junction
 //		yes: break. (optimization)
 //		no : next question...
 //			2. BURN PROCESS. Find all adjacent pointless siblings. and create+assign to new share.
-string sharesSimple[]; //Jpoint sets.  EG: "{1,2,8,54","101,102,103"} < pointlessprims that share starts or ends with or more of each other. 
+string sharesSimple[]={""}; //Jpoint sets.  EG: "{1,2,8,54","101,102,103"} < pointlessprims that share starts or ends with or more of each other. 
 foreach(int i=0;i<len(pointlessPrims);i++){
 	int edge = pointlessPrims[i];
 	string s_edge = ","+itoa(edge)+",";
@@ -160,11 +160,11 @@ foreach(int i=0;i<len(pointlessPrims);i++){
 						int initialEdges[]={};
 						int endEdges[]={};
 						if(find(processedPoints,rawPoints[0])<0){	//if not processed
-							initialEdges = pointprims(0,rawPoints[0]); //connecting edges.
+							initialEdges = pointprims(0,rawPoints[0]); //get connecting edges.
 							push(processedPoints,rawPoints[0]);
 						}
 						if(find(processedPoints,rawPoints[-1])<0){	//if not processed
-							endEdges = pointprims(0,rawPoints[-1]);
+							endEdges = pointprims(0,rawPoints[-1]);	//get connecting edges.
 							push(processedPoints,rawPoints[-1]);
 						}
 						//cocatinate pointless.
@@ -195,6 +195,92 @@ foreach(int i=0;i<len(pointlessPrims);i++){
 	}
 }
 
+
+
+
+
+//TODO: get sharepoints
+string sharePoints[];
+string shareDirection[]; //1=out, 0=in // maps to the above.
+string firstValidPoint[]; //walk edge until first usable point.
+
+foreach(string share; sharesSimple){
+	string output 					= ",";
+	string directionoutput  = ",";
+	string firstValid 			= ",";
+
+	int sharePointProcessedPrims[];
+	string splits[] = split(share,",");
+	int i_splits[];
+	for(string s; splits){
+		push(i_splits, atoi(s));
+	}
+	//Get end and start of each split
+	for(string splice; splits){
+		i_splice = atoi(splice);
+		int rawpoints[] = primpoints(0,i_splice);
+		int end1 = rawpoints[0]; 
+		int end2 = rawpoints[-1];
+		int thesePrims[] = pointprims(0,start);
+		int additialPrims[] = pointprims(0,end);
+
+		//combine these prim arrays.
+		for(int p2, additialPrims){
+			push(thesePrims,p2);
+		}
+
+		for(int sp=0;sp<len(thesePrims);sp++){
+			thisprim= thesePrims[sp];
+			//Is this prim regular? (not to be removed?) && does this prim exist in processedPrims?
+			if(find(sharePointProcessedPrims,thisprim)<0&&find(pointlessPrims,thisprim)<0){
+				push(sharePointProcessedPrims,thisprim);
+				output= output + itoa(i_splice) +",";
+				//Where is this point on this prim, initial or terminal? // for direction
+				//How to solve: get first point of primitive, if first point equals current end. shareDirection = True = 1 = out;
+				int ppoints[] = primpoints(0,thisprim);
+				int ppointFirst = ppoints[0];
+				if(end1 = ppointFirst){
+					directionoutput = directionoutput + "1,";
+					//get first valid point
+					for(int pointwalk=1;pointwalk<len(ppoints);pointwalk++){ //direction is 1 so walk from 0, ++. ALSO! 0 is a junction, so start at 1.
+						thisPNT = ppoints[pointwalk];
+						if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
+							firstValid= firstValid + itoa(thisPNT)+",";
+							break;
+						}
+					}
+				}else{//end1 != ppointFirst 
+					directionoutput = directionoutput + "0,";
+					//get first valid point
+					for(int pointwalk= len(ppoints)-2;pointwalk>=0;pointwalk--){ //direction is 0 so walk from MAX, --. ALSO! last is a junction, so start at -2.
+						thisPNT = ppoints[pointwalk];
+						if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
+							firstValid= firstValid + itoa(thisPNT)+",";
+							break;
+						}
+					}
+				}
+			}
+		}
+	push(sharePoints,			output);
+	push(shareDirection,	directionoutput);
+	push(firstValidPoint,	firstValid);
+	}
+}
+
+//TODO: get distance to sharePosition
+
+
+
+
+
+
+
+
+
+
+
+//TODO: Calculate UV Offset. Will need flow direction for +/- multiplier.
 
 
 
