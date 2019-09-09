@@ -350,38 +350,15 @@ for(int k=0; k<len(sharePrims);k++){
 //start at prim level...
 for(int currentPrim;currentPrim<len(nprimitives(0);currentPrim++){					//FOR ALL PRIMITIVES.
 	if(find(pointlessPrims,currentPrim)<0){ //if not pointless.								//IF NOT POINTLESS (first optimization.)
-		//special case if it is inflow from share.
-		//attempt to find in share with direction==1;
-		for(int oneShare=0;oneShare<len(sharesSimple);oneShare++){							//EVALUATE IF PRIMITIVE IS IN INFLOW, IF YES: OFFSET UVS.
-			//convert to int array.
-			string S_shareFrag[] = split(sharesSimple[oneShare],",");
-			int I_convertedShares[];
-			foreach(string ccs;S_shareFrag){push(I_convertedShares,atoi(ccs));}
-			int searchResults[] = find(I_convertedShares,currentPrim);
-			
-			if(len(searchResults)>0){
-				//expand direction storage.
-				string S_dirFrag[] = split(shareDirection[oneShare],",");
-				int I_dirs[];	foreach(string ds; S_dirFrag){push(I_dirs,atoi(ds));}
-				foreach(int sr; searchResults){
-					if(I_dirs[sr]==1){//offset uvs
-						//get offset distance 
-						float UVdelta[];foreach(string ofs; offsets){push(UVdelta,atof(ofs));}
-						float thisUVdelta = UVdelta[sr];
-						
-						int thisPrimsPoints[] = primpoints(0,currentPrim);
-						for(int processPoint =0; processPoint<len(thisPrimsPoints);processPoint++){
-							int depoint=thisPrimsPoints[processPoint];
-							//if(find(pointsTooClose,depoint)<0){
-								vector originalUV = point(0,"uv",depoint);
-								float newu= originalUV[0]+thisUVdelta;
-								//modify uv and reassign
-								vector newUV = set(newu, originalUV[1]);
-								//set attribute
-								int pass = setpointattrib(0,"uv,", depoint, newUV, "set");
-							//}
-						}
-					}
+		int currentPrimPoints[] = primpoints(0,currentPrim);
+		for(int p = 0; p<len(currentPrimPoints);p++){
+			int thispnt = currentPrimPoints[p];
+			if(find(pointsTooClose,thispnt)<0)}{
+				if(p==len(currentPrimPoints)-1){//this is the last point, handle differently
+						int nxtpnt = currentPrimPoints[p-1]; 
+				}else{//get next point
+						int nxtpnt = currentPrimPoints[p+1]; 
+	
 				}
 			}
 		}
