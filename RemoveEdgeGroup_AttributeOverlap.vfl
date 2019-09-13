@@ -1,0 +1,24 @@
+//optional, remove seams that lie between two groups.
+//create list of points that belong to both groups.
+int centerGroup[];
+for(int k=0;k<npoints(0);k++){
+        int b_in = point(0,"inside",k);
+        int b_out= point(0,"outside",k);
+        if(b_in==1&&b_out==1){push(centerGroup,k);}
+}
+int seams[] = expandedgegroup(0,"seam");
+//printf("seams: %f\\n",seams);
+printf("len: %f", len(seams));
+
+for(int ccheck=0; ccheck<len(seams);ccheck+=2){
+    int thisp=seams[ccheck];
+    int nextp=seams[ccheck+1];
+    
+    int thisCenter = find(centerGroup, thisp);
+    int nextCenter = find(centerGroup, nextp);
+    if(thisCenter>-1&&nextCenter>-1){
+        int pass1 = setedgegroup(0, "seam", thisp, nextp, 0);
+    }
+}
+
+
