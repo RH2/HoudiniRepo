@@ -1,0 +1,88 @@
+float angleThresh = 10; //in degrees.
+float pi = 3.14159264;
+float angleThreshRadians = (angleThresh/180)*3.14159264;
+printf("RUNNING\\n\\n");
+for(int i =0;i<npoints(0);i++){
+	int thisPoint = i;
+  //use existing @n :: neighbour count.
+  //check each neighbour for an n value higher than 2.
+  if(point(0,"n",i)>2){
+    int ns[] = neighbours(0,i);//if it is a junction, get connecting edges.
+    for(int n=0; n<len(ns);n++){
+    	int thisNeigh = ns[n];
+    	if(point(0,"n",thisNeigh)>2){
+    		int pass = setedgegroup(0, "seam", thisPoint, thisNeigh, 1);
+    		float initialAngle;
+    			vector va= point(0,"P",thisPoint);		//CALULATE INITIAL ANGLE.
+    			vector vb= point(0,"P",thisNeigh);
+    			//printf("LocationA= %f, LocationB= %f\\n",va,vb);
+   				float dx = vb[0]-va[0]; //XZ as usual.
+   				float dz = vb[2]-va[2];
+    			initialAngle = atan2(dz,dx);
+    		//This is the first link in the chain, now burn through edges with a small angle difference.*
+    		//INITIALIZE BURN.
+			        		
+
+
+    		int LinksWereFound = 1;
+    		int lastNode = thisNeigh;
+    		int processedPoints[]; push(processedPoints,thisPoint);push(processedPoints,thisNeigh); //array starts with original edge.
+    		//printf("lastnode %f, thisneigh %f\\n",lastNode,thisNeigh);
+    		while(LinksWereFound == 1){
+    			int nodeNeighs[] = neighbours(0,lastNode);
+    			int nodeNeighsProcessed[];
+    			foreach(int pneigh; nodeNeighs){
+    				if(find(processedPoints,pneigh)<0){
+    					push(nodeNeighsProcessed,pneigh);
+
+    				}
+    			}
+
+    			
+    			//THIS FOR STATEMENT (36-59) FINDS EDGE WITH LOWEST ANGLE DELTA.
+    			float lowestAngle; //actual lowest angle
+    			float lowestDelta= 999999; //lowest absolute difference
+    			int lowestIndex=-1; //which edge was it?
+    			for(int nn=0;nn<len(nodeNeighs);nn++){
+    				int nodeEdge = nodeNeighs[nn];
+    				//just find the angle. between this last node, and it's neighbours.
+    				vector vc = point(0,"P",lastNode);
+    				vector vd = point(0,"P",nodeEdge);
+    				float dx2 = vd[0]-vc[0];
+    				float dz2 = vd[2]-vc[2]; 
+    				float edgeangle = atan2(dz2,dx2);
+
+    				//compare angles
+    				float deltaAngle = abs(initialAngle-edgeangle);
+    				//printf("initial angle= %f, new angle = %f,deltaAngle = %f\\n",initialAngle,edgeangle,deltaAngle);
+    				if(deltaAngle<lowestDelta){
+    					//replace current index, angle, and delta.
+    					lowestAngle = edgeangle;
+    					lowestDelta = deltaAngle;
+    					lowestIndex = nn;
+    					//int pass3 = setpointattrib(0,"Cd",nodeNeighs[lowestIndex],{1,0,1},"set");
+    				}
+    			}
+    			printf("lowest delta was: %f°, at index: %f\\n",lowestDelta/pi*180,lowestIndex);
+
+
+    			if(lowestDelta<angleThreshRadians){
+    				LinksWereFound=1;
+    				int lowestPoint = nodeNeighs[lowestIndex];
+    				int pass2 = setedgegroup(0, "seam", lastNode, lowestPoint, 1);
+    				//int pass3 = setpointattrib(0,"Cd",lowestPoint,{1,10,0},"set");
+    				lastNode = lowestPoint;
+    				//push(processedPoints, lastNode);
+    				printf("FOUND SOMETHING ----------------------------------------\\n");
+
+    			}
+    			else{
+    				LinksWereFound=0;
+    			}
+    		}
+    	}
+    }
+  }
+}
+
+
