@@ -45,16 +45,16 @@
     return sprintf("%.10f", in);
 	}
 	void addIntegerToStringSet(int i; string Set){
-	int intarray[];
-	string splits[] = split(Set, ",");
-	if 
-	foreach(string s; splits){
-		push(intarray,atoi(s));
-	}
-	if(find(intarray,i)<0){
-		if(Set[-1]!=","){Set+=","};
-		Set+=itoa(i);
-	}
+		int intarray[];
+		string splits[] = split(Set, ",");
+		if 
+		foreach(string s; splits){
+			push(intarray,atoi(s));
+		}
+		if(find(intarray,i)<0){
+			if(Set[-1]!=","){Set+=","};
+			Set+=itoa(i);
+		}
 	}
 //constants
 	float diameter = 50.0;
@@ -347,19 +347,42 @@ for(int k=0; k<len(sharePrims);k++){
 
 //SWEEP --LETS DO THIS.
 
+int pointLeafLeaf[]; //stores tuples, original point and associated sweep points.
 //start at prim level...
 for(int currentPrim;currentPrim<len(nprimitives(0);currentPrim++){					//FOR ALL PRIMITIVES.
-	if(find(pointlessPrims,currentPrim)<0){ //if not pointless.								//IF NOT POINTLESS (first optimization.)
+	if(find(pointlessPrims,currentPrim)<0){ //if not pointless.								//IF NOT POINTLESS (first optimization.) 
 		int currentPrimPoints[] = primpoints(0,currentPrim);
+
+		//record pointLeafLeaf, on transitions from "tooclose" to "!tooclose"
+		int lastTooclose=1;
+
 		for(int p = 0; p<len(currentPrimPoints);p++){
 			int thispnt = currentPrimPoints[p];
-			if(find(pointsTooClose,thispnt)<0)}{
-				if(p==len(currentPrimPoints)-1){//this is the last point, handle differently
-						int nxtpnt = currentPrimPoints[p-1]; 
-				}else{//get next point
+			if(find(pointsTooClose,thispnt)<0)}{//if point is not too close to a junction.
+
+				if(p!=len(currentPrimPoints)-1){//this is not the last point, usual case. (angle is this point vs next point)
 						int nxtpnt = currentPrimPoints[p+1]; 
+						//get positions, calculate angle, and offset +-90°
+						vector thisloc = point(0,"P",thispnt);
+						vector nextloc = point(0,"P",nxtpnt);
+						float deltax = thisloc[0]-nextloc[0];//XZ plane
+						float deltaz = thisloc[2]-nextloc[2];
+						float angle = atan2(deltaz,deltax);
+
+
+						
+				}else{//this is the last point (special case, angle is this point vs previous point. Rotated 180°.)
+						int nxtpnt = currentPrimPoints[p-1]; 
 	
 				}
+				if(lastTooclose==1){//record this pointleafleaf;
+					push(pointLeafLeaf,);
+					push(pointLeafLeaf,);
+					push(pointLeafLeaf,);
+				}
+				lastTooclose = 0;
+			}else{
+				lastTooclose=1;
 			}
 		}
 	}
