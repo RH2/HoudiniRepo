@@ -57,7 +57,7 @@
 		}
 	}
 //constants
-	float diameter = 50.0;
+	float diameter = 1.4;
 	float radius = diameter/2;
 	float pi = 3.14159264;
 	float tau = 3.14159264*2;
@@ -346,49 +346,131 @@ for(int k=0; k<len(sharePrims);k++){
 
 
 //SWEEP --LETS DO THIS.
+int pointleafleaf[]; //each prim contains 6 entries. start,leaf,leaf,end,leaf,leaf.
+for(int sweep; sweep<len(pointlessPrims);sweep++){
+	thisprim = pointlessPrims[sweep];
+	//for each prim get a list of points that are not too close.
+	//mach list with angles.
+	int allpoints[] = primpoints(0,thisprim);
+	//create list of points that are not too close.
+	int notremoved[];
+	if(len(notremoved) == 0){ //don't sweep if no points are valid.
+		//escape, nothing to sweep on this primitive.
+		break;
+	}
+	foreach(int unfilteredpoint, allpoints){
+		if(find(pointsTooClose,unfilteredpoint)>-1){
+			push(notremoved,unfilteredpoint);
+		}
+	}
+	float notRemovedAngles[];
+	//now we calculate the angles to accompany points that were not removed.
+	for(int angleCalc=0; angleCalc<len(notremoved);angleCalc++){
+		int thisPoint = notremoved[angleCalc];
+			
+		//Operation Summary:
+			//if unfiltered point is not last unfiltered:
+			//	angle is this unfiltered to next unfiltered
+			//if unfiltered point is last unfiltered:
+			//	if unfiltered point is also last general point :
+			//		angle is this unfiltered to previous general point  +180° 
+			//	else:
+			//		angle is this unfiltered point to last general point
 
-int pointLeafLeaf[]; //stores tuples, original point and associated sweep points.
-//start at prim level...
-for(int currentPrim;currentPrim<len(nprimitives(0);currentPrim++){					//FOR ALL PRIMITIVES.
-	if(find(pointlessPrims,currentPrim)<0){ //if not pointless.								//IF NOT POINTLESS (first optimization.) 
-		int currentPrimPoints[] = primpoints(0,currentPrim);
-
-		//record pointLeafLeaf, on transitions from "tooclose" to "!tooclose"
-		int lastTooclose=1;
-
-		for(int p = 0; p<len(currentPrimPoints);p++){
-			int thispnt = currentPrimPoints[p];
-			if(find(pointsTooClose,thispnt)<0)}{//if point is not too close to a junction.
-
-				if(p!=len(currentPrimPoints)-1){//this is not the last point, usual case. (angle is this point vs next point)
-						int nxtpnt = currentPrimPoints[p+1]; 
-						//get positions, calculate angle, and offset +-90°
-						vector thisloc = point(0,"P",thispnt);
-						vector nextloc = point(0,"P",nxtpnt);
-						float deltax = thisloc[0]-nextloc[0];//XZ plane
-						float deltaz = thisloc[2]-nextloc[2];
-						float angle = atan2(deltaz,deltax);
-
-
-						
-				}else{//this is the last point (special case, angle is this point vs previous point. Rotated 180°.)
-						int nxtpnt = currentPrimPoints[p-1]; 
-	
-				}
-				if(lastTooclose==1){//record this pointleafleaf;
-					push(pointLeafLeaf,);
-					push(pointLeafLeaf,);
-					push(pointLeafLeaf,);
-				}
-				lastTooclose = 0;
+		if(thisPoint!=notremoved[-1]){//if not last unfiltered.
+			vector locationA = point(0,"P",thisPoint);//from
+			vector locationB = point(0,"P",notremoved[angleCalc+1]);//to
+			float deltax = locationB[0]-locationA[0];
+			float deltaz = locationB[2]-locationA[2];
+			float atan2result = atan2(deltaz,deltax);
+			push(notRemovedAngles,atan2Result);
+		}else{//is last unfiltered.
+			int lastPointInPrim = allpoints[-1];
+			if(thisPoint==lastPointInPrim){//this last unfiltered is also last point in prim.
+				//angle from second from last to last.
+				vector locationA = point(0,"P",allpoints[-2]);//from last-1
+				vector locationB = point(0,"P",thisPoint);//to last
+				float deltax = locationB[0]-locationA[0];
+				float deltaz = locationB[2]-locationA[2];
+				float atan2result = atan2(deltaz,deltax);
+				push(notRemovedAngles,atan2Result);
 			}else{
-				lastTooclose=1;
+				//angle from last general point.
+				int indexOf = find(allpoints,thisPoint);
+				int previousGeneral = allpoints[indexOf-1]; 
+				vector locationA = point(0,"P",previousGeneral);//from last-1
+				vector locationB = point(0,"P",thisPoint);//to last
+				float deltax = locationB[0]-locationA[0];
+				float deltaz = locationB[2]-locationA[2];
+				float atan2result = atan2(deltaz,deltax);
+				push(notRemovedAngles,atan2Result);
 			}
 		}
+	}
+
+	//CREATE NEW POINTS USING THESE ANGLES.
+	int lastCenter = -1;
+	int lastRight = -1;
+	int lastLeft = -1;
+	foreach(int sweepOP = 0; sweepOP<len(notremoved);sweepOP++){
+		int   thispoint = notremoved[sweepOP];
+		float thisangle = notRemovedAngles[sweepOP];
+		vector thisLocation = point(0,"P",thispoint);
+		vector thisUV = point(0,"uv",thispoint);
+		float m90 = clampAngle(thisangle-pi/2);
+		float p90 = clampAngle(thisangle+pi/2);
+
+		vector locL= set(
+			thisLocation[0]+radius*cos(m90),
+			0,
+			thisLocation[2]+radius*sin(m90));
+		vector locR= set(
+			thisLocation[0]+radius*cos(p90),
+			0,
+			thisLocation[2]+radius*sin(p90));
+		int pl = addpoint(0,locL);
+		int pr = addpoint(0,LocR);
+
+		vector upUV = set(
+			thisUV[0],
+			1,
+			0);
+		vector downUV = set(
+			thisUV[0],
+			0,
+			0);
+		int pass = setpointattrib(0, "uv", pl, upUV, "set");
+		int pass1 = setpointattrib(0, "uv", pr, downUV, "set");
+
+		if(sweepOP==0){//is first
+			push(pointleafleaf,thispoint); //pointleafleaf defined on line 349.
+			push(pointleafleaf,left);
+			push(pointleafleaf,right);
+		}
+		if(sweepOP==len(notremoved)-1){//is last
+			push(pointleafleaf,thispoint);
+			push(pointleafleaf,left);
+			push(pointleafleaf,right);
+		}
+
+		if(lastCenter!=-1){//if we have processed a set already, now we can begin connecting trios.
+			int leftface = addprim(0,'poly');
+			addvertex(0,newface, lastLeft);
+			addvertex(0,newface, lastCenter);
+			addvertex(0,newface, thispoint);
+			addvertex(0,newface, pl);
+			int rightface = addprim(0,'poly');
+			addvertex(0,newface, lastCenter);
+			addvertex(0,newface, lastRight);
+			addvertex(0,newface, pr);
+			addvertex(0,newface, thispoint);
+		}
+		//update last.
+			lastCenter = thispoint;
+			lastRight = pr;
+			lastLeft = pl;
 	}
 }
 
 
-
-
-//JUNCTION
+//Create the Junctions.
