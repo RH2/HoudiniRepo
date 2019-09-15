@@ -31,7 +31,7 @@
         float result = (e[0]-s[0])*(p[2]-s[2])  -  (e[2]-s[2])*(p[0]-s[0]);
         return result;
 	}
-	int I_result[];		void Specialdecode1(int i; string S_input; int output[]){
+	void Specialdecode1(int i; string S_input; int output[]){
     output = {};
     string L[] = split(S_input,"L");
     if(i>len(L)-1){output = {-1};}
@@ -47,12 +47,12 @@
 	void addIntegerToStringSet(int i; string Set){
 		int intarray[];
 		string splits[] = split(Set, ",");
-		if 
 		foreach(string s; splits){
-			push(intarray,atoi(s));
+			int convert = atoi(s);
+			push(intarray,convert);
 		}
 		if(find(intarray,i)<0){
-			if(Set[-1]!=","){Set+=","};
+			if(Set[-1]!=","){Set+=",";}
 			Set+=itoa(i);
 		}
 	}
@@ -77,8 +77,7 @@ for(int pProxCheck=0; pProxCheck<npoints(0);pProxCheck++){
 		vector locA = point(0,"P",pProxCheck);
 		for(int junc=0;junc<len(originalJunctions);junc++){
 			vector locB =point(0,"P",originalJunctions[junc]);
-			locB = locA-locB;
-			float dist = distance(locB);
+			float dist = distance(locA,locB);
 			if(dist<radius){
 				push(pointsTooClose,pProxCheck);
 				break;//only needs to be marked once.
@@ -107,6 +106,8 @@ int specialIntersections[];
 string reg[];//regular //primitive indice that needs new meta.
 string rem[];//remove  //primitives that will no longer exist.
 for(int j=0;j<len(originalJunctions);j++){//each junction
+	push(reg,",");
+	push(rem,",");
 	int thisJunction = originalJunctions[j];
 	int theseNeighbours[] = neighbours(0,thisJunction);//each point connected to junction.
 	for(int jn=0;jn<len(theseNeighbours);jn++){
@@ -118,10 +119,10 @@ for(int j=0;j<len(originalJunctions);j++){//each junction
 				if(find(specialIntersections,thisJunction)<0){
 					push(specialIntersections,thisJunction);
 				}
-				rem += itoa(thisConnectedPrim)+",";
+				rem[j] += itoa(thisConnectedPrim)+","; //possible error, correct array index?
 			}
 			else{//branch is not pointless
-				reg += itoa(thisConnectedPrim)+",";
+				reg[j] += itoa(thisConnectedPrim)+",";
 			}
 		}
 	}
@@ -134,11 +135,11 @@ for(int j=0;j<len(originalJunctions);j++){//each junction
 //		no : next question...
 //			2. BURN PROCESS. Find all adjacent pointless siblings. and create+assign to new share.
 string sharesSimple[]={""}; //Pointless primitive sets.  EG: "{1,2,8,54","101,102,103"} < pointlessprims that share starts or ends with or more of each other. 
-foreach(int i=0;i<len(pointlessPrims);i++){
+for(int i=0;i<len(pointlessPrims);i++){
 	int edge = pointlessPrims[i];
 	string s_edge = ","+itoa(edge)+",";
 	for(int n=0;n<len(sharesSimple);n++){//need to ask question in all sets.
-		int findResult = find(sharesSimple[n]),s_edge));
+		int findResult = find(sharesSimple[n],s_edge);
 		//Q1 : does this pointless prim exist in a share?
 		if(findResult>-1){
 			//Q1.yes!
@@ -154,7 +155,7 @@ foreach(int i=0;i<len(pointlessPrims);i++){
 			int NewEdgesFound =1;
 			while(NewEdgesFound>0){
 				for(int cp = 0; cp<len(newPrims); cp++){
-					checkPrim = newPrims[cp];
+					int checkPrim = newPrims[cp];
 					if(find(processedPrims,checkPrim)<0){//only process if not found.
 						push(processedPrims, checkPrim);//do not process this prim again.
 						int rawPoints[] = primpoints(0,checkPrim);//get first and last point.	
@@ -187,8 +188,8 @@ foreach(int i=0;i<len(pointlessPrims);i++){
 				}
 			}
 			//convert newPrim integer array to string for storage.
-			string S_newShare = ","
-			for(int p; newPrims){
+			string S_newShare = ",";
+			foreach(int p; newPrims){
 				S_newShare+=itoa(p)+",";
 			}
 			push(sharesSimple,S_newShare);
@@ -211,7 +212,7 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 
 	string thisShareSplit[] = split(oneSimpleShare,",");  // {J1,J2,J3,J4}
 	int I_removablePrimitiveInShare[];
-	for(string s; thisShareSplit){
+	foreach(string s; thisShareSplit){
 		push(I_removablePrimitiveInShare, atoi(s));
 	}
 	//Get end and start of each split
@@ -220,17 +221,17 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 		int rawpoints[] = primpoints(0,i_removablePrm); //all points in prim.
 		int end1 = rawpoints[0]; 
 		int end2 = rawpoints[-1];
-		int ends[];push(ends,end1);push(ends,end2)
+		int ends[];push(ends,end1);push(ends,end2);
 		int allConnectedPrims[] = pointprims(0,end1);
 		int otherPrims[] = pointprims(0,end2);
 
 		//Make THESEPRIMS a list of all connected primitives/edges!
-		for(int p2, otherPrims){
+		foreach(int p2; otherPrims){
 			push(allConnectedPrims,p2);
 		}
 
 		for(int sp=0;sp<len(allConnectedPrims);sp++){// sp = abbriviation for "selected prim"
-			thisprim= allConnectedPrims[sp];
+			int thisprim= allConnectedPrims[sp];
 			//Is this prim regular? (not to be removed?) && does this prim exist in processedPrims?
 			if(find(sharePointProcessedPrims,thisprim)<0&&find(pointlessPrims,thisprim)<0){
 				push(sharePointProcessedPrims,thisprim);//don't process again.
@@ -243,7 +244,7 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 					directionoutput = directionoutput + "1,";
 					//get first valid point
 					for(int pointwalk=1;pointwalk<len(thisPrimsPoints);pointwalk++){ //direction is 1 so walk from 0, ++. ALSO! 0 is a junction, so start at 1.
-						thisPNT = thisPrimsPoints[pointwalk];
+						int thisPNT = thisPrimsPoints[pointwalk];
 						if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
 							firstValid= firstValid + itoa(thisPNT)+",";
 							break;
@@ -253,7 +254,7 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 					directionoutput = directionoutput + "0,";
 					//get first valid point
 					for(int pointwalk= len(thisPrimsPoints)-2;pointwalk>=0;pointwalk--){ //direction is 0 so walk from MAX, --. ALSO! last is a junction, so start at -2.
-						thisPNT = thisPrimsPoints[pointwalk];
+						int thisPNT = thisPrimsPoints[pointwalk];
 						if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
 							firstValid= firstValid + itoa(thisPNT)+",";
 							break;
@@ -272,7 +273,7 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 vector V_shareLoc[];
 foreach(string oneSimpleShare; sharesSimple){
 	// HAVING A POINT RECORDED MANY TIMES IS ***GOOD***. EMERGENT WEIGHTS.
-	string S_edges = split(oneSimpleShare, ",");
+	string S_edges[] = split(oneSimpleShare, ",");
 	int I_edges[];
 	int JunctionPoints[];
 	foreach(string item; S_edges){
@@ -285,7 +286,7 @@ foreach(string oneSimpleShare; sharesSimple){
 		push(JunctionPoints,e0);
 		push(JunctionPoints,e1);	
 	}
-	vector newLoc;
+	vector newLoc = {0,0,0};
 	//sum position for all points
 	foreach(int point; JunctionPoints){
 		vector loc = point(0,"P",point);
@@ -315,9 +316,9 @@ for(int k=0; k<len(sharePrims);k++){
 	string S_thisDirections = shareDirection[k];
 	string S_theseClosePoints =  firstValidPoint[k];
 	//convert these strings to integer arrays.
-	int I_thesePrims[];					foreach(string x;S_thisPrimSet)			{push(I_thesePrims,				atoi(x)	)};	
-	int I_theseDirections[];		foreach(string x;S_thisDirections)	{push(I_theseDirections,	atoi(x)	)};
-	int I_theseClosePoints[];		foreach(string x;S_theseClosePoints){push(I_theseClosePoints,	atoi(x)	)};
+	int I_thesePrims[];					foreach(string x;S_thisPrimSet)			{push(I_thesePrims,				atoi(x)	);}	
+	int I_theseDirections[];		foreach(string x;S_thisDirections)	{push(I_theseDirections,	atoi(x)	);}
+	int I_theseClosePoints[];		foreach(string x;S_theseClosePoints){push(I_theseClosePoints,	atoi(x)	);}
 
 	//all of these arrays should be 1:1
 	for(int x = 0; x<len(I_thesePrims);x++){
@@ -329,16 +330,17 @@ for(int k=0; k<len(sharePrims);k++){
 		vector thisLoc = point(0,"P",pnt);
 		vector newLoc = V_shareLoc[k];
 		vector originalLoc;  
-		if(dir==1){originalLoc = point(0,"P",edgpnts[0]);}else{originalLoc = point(0,"P",edgpnts[-1])};
+		if(dir==1){originalLoc = point(0,"P",edgpnts[0]);}else{originalLoc = point(0,"P",edgpnts[-1]);}
 
 
-		float od = distance(thisLoc,oldLoc); 
+		float od = distance(thisLoc,originalLoc); 
 		float nd = distance(thisLoc,newLoc);
 		float dd = nd-od;
 
 		string dd_stringified = ftoa(dd);
 		offsetCollection += dd_stringified+",";
 	}
+	push(offsets,offsetCollection);
 }
 
 //offset source uv happens when we sweep the curve.
@@ -347,8 +349,8 @@ for(int k=0; k<len(sharePrims);k++){
 
 //SWEEP --LETS DO THIS.
 int pointleafleaf[]; //each prim contains 6 entries. start,leaf,leaf,end,leaf,leaf.
-for(int sweep; sweep<len(pointlessPrims);sweep++){
-	thisprim = pointlessPrims[sweep];
+for(int sweep=0; sweep<len(pointlessPrims);sweep++){
+	int thisprim = pointlessPrims[sweep];
 	//for each prim get a list of points that are not too close.
 	//mach list with angles.
 	int allpoints[] = primpoints(0,thisprim);
@@ -358,7 +360,7 @@ for(int sweep; sweep<len(pointlessPrims);sweep++){
 		//escape, nothing to sweep on this primitive.
 		break;
 	}
-	foreach(int unfilteredpoint, allpoints){
+	foreach(int unfilteredpoint; allpoints){
 		if(find(pointsTooClose,unfilteredpoint)>-1){
 			push(notremoved,unfilteredpoint);
 		}
@@ -383,7 +385,7 @@ for(int sweep; sweep<len(pointlessPrims);sweep++){
 			float deltax = locationB[0]-locationA[0];
 			float deltaz = locationB[2]-locationA[2];
 			float atan2result = atan2(deltaz,deltax);
-			push(notRemovedAngles,atan2Result);
+			push(notRemovedAngles,atan2result);
 		}else{//is last unfiltered.
 			int lastPointInPrim = allpoints[-1];
 			if(thisPoint==lastPointInPrim){//this last unfiltered is also last point in prim.
@@ -393,7 +395,7 @@ for(int sweep; sweep<len(pointlessPrims);sweep++){
 				float deltax = locationB[0]-locationA[0];
 				float deltaz = locationB[2]-locationA[2];
 				float atan2result = atan2(deltaz,deltax);
-				push(notRemovedAngles,atan2Result);
+				push(notRemovedAngles,atan2result);
 			}else{
 				//angle from last general point.
 				int indexOf = find(allpoints,thisPoint);
@@ -403,7 +405,7 @@ for(int sweep; sweep<len(pointlessPrims);sweep++){
 				float deltax = locationB[0]-locationA[0];
 				float deltaz = locationB[2]-locationA[2];
 				float atan2result = atan2(deltaz,deltax);
-				push(notRemovedAngles,atan2Result);
+				push(notRemovedAngles,atan2result);
 			}
 		}
 	}
@@ -412,7 +414,7 @@ for(int sweep; sweep<len(pointlessPrims);sweep++){
 	int lastCenter = -1;
 	int lastRight = -1;
 	int lastLeft = -1;
-	foreach(int sweepOP = 0; sweepOP<len(notremoved);sweepOP++){
+	for(int sweepOP = 0; sweepOP<len(notremoved);sweepOP++){
 		int   thispoint = notremoved[sweepOP];
 		float thisangle = notRemovedAngles[sweepOP];
 		vector thisLocation = point(0,"P",thispoint);
@@ -429,7 +431,7 @@ for(int sweep; sweep<len(pointlessPrims);sweep++){
 			0,
 			thisLocation[2]+radius*sin(p90));
 		int pl = addpoint(0,locL);
-		int pr = addpoint(0,LocR);
+		int pr = addpoint(0,locR);
 
 		vector upUV = set(
 			thisUV[0],
@@ -444,26 +446,26 @@ for(int sweep; sweep<len(pointlessPrims);sweep++){
 
 		if(sweepOP==0){//is first
 			push(pointleafleaf,thispoint); //pointleafleaf defined on line 349.
-			push(pointleafleaf,left);
-			push(pointleafleaf,right);
+			push(pointleafleaf,pl);
+			push(pointleafleaf,pr);
 		}
 		if(sweepOP==len(notremoved)-1){//is last
 			push(pointleafleaf,thispoint);
-			push(pointleafleaf,left);
-			push(pointleafleaf,right);
+			push(pointleafleaf,pl);
+			push(pointleafleaf,pr);
 		}
 
 		if(lastCenter!=-1){//if we have processed a set already, now we can begin connecting trios.
 			int leftface = addprim(0,'poly');
-			addvertex(0,newface, lastLeft);
-			addvertex(0,newface, lastCenter);
-			addvertex(0,newface, thispoint);
-			addvertex(0,newface, pl);
+			addvertex(0,leftface, lastLeft);
+			addvertex(0,leftface, lastCenter);
+			addvertex(0,leftface, thispoint);
+			addvertex(0,leftface, pl);
 			int rightface = addprim(0,'poly');
-			addvertex(0,newface, lastCenter);
-			addvertex(0,newface, lastRight);
-			addvertex(0,newface, pr);
-			addvertex(0,newface, thispoint);
+			addvertex(0,rightface, lastCenter);
+			addvertex(0,rightface, lastRight);
+			addvertex(0,rightface, pr);
+			addvertex(0,rightface, thispoint);
 		}
 		//update last.
 			lastCenter = thispoint;
@@ -471,6 +473,29 @@ for(int sweep; sweep<len(pointlessPrims);sweep++){
 			lastLeft = pl;
 	}
 }
-
+printf("originalJunctions: %f\\n",originalJunctions);
+printf("pointsTooClose: %f\\n",pointsTooClose);
+printf("pointlessPrims: %f\\n",pointlessPrims);
+printf("specialIntersections: %f\\n",specialIntersections);
+printf("sharesSimple: %f\\n",sharesSimple);
+printf("sharePrims: %f\\n",sharePrims);
+printf("shareDirection: %f\\n",shareDirection);
+printf("firstValidPoint: %f\\n",firstValidPoint);
+printf("V_shareLoc: %f\\n",V_shareLoc);
+printf("offsets: %f\\n",offsets);
+printf("pointleafleaf: %f\\n",pointleafleaf);
 
 //Create the Junctions.
+
+//INGREDIENTS:
+//originalJunctions[];
+//pointsTooClose[];
+//pointlessPrims[];
+//specialIntersections[];
+//sharesSimple[]
+//sharePrims[];
+//shareDirection[];
+//firstValidPoint[];
+//V_shareLoc[];
+//offsets[];
+//pointleafleaf[];
