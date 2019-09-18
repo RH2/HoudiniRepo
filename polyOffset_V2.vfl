@@ -93,7 +93,6 @@ for(int pPrimCheck=0;pPrimCheck<nprimitives(0);pPrimCheck++){
 	for(int pp=0;pp<len(pPoints);pp++){
 		int focusedPoint = pPoints[pp];
 		if(find(pointsTooClose,focusedPoint)<1){
-			printf("prim: %f, found point: %f\\n",pPrimCheck,focusedPoint);
 			int nCount = neighbourcount(0,focusedPoint);
 			if(nCount<3){//Check to see if is a junction.
 				numberOfActivePoints++;//if point is not found, then it is active
@@ -134,11 +133,11 @@ for(int j=0;j<len(originalJunctions);j++){//each junction
 }
 
 // sharesSimple is an array of all pointless prim sets.
-//2 questions.
-//	1.does this pointless prim exist in a share? 
-//		yes: break. (optimization)
-//		no : next question...
-//			2. BURN PROCESS. Find all adjacent pointless siblings. and create+assign to new share.
+	//2 questions.
+	//	1.does this pointless prim exist in a share? 
+	//		yes: break. (optimization)
+	//		no : next question...
+	//			2. BURN PROCESS. Find all adjacent pointless siblings. and create+assign to new share.
 string sharesSimple[]; //Pointless primitive sets.  EG: "{1,2,8,54","101,102,103"} < pointlessprims that share starts or ends with or more of each other. 
 for(int i=0;i<len(pointlessPrims);i++){
 	int edge = pointlessPrims[i];
@@ -205,6 +204,18 @@ for(int i=0;i<len(pointlessPrims);i++){
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 //TODO: get sharepoints  
 string sharePrims[];		//for each group of edges, there will be a group of *non removed* edges connected (PRIMS!).
 string shareDirection[]; //1=out, 0=in // maps to the above.
@@ -216,8 +227,7 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 	string firstValid 			= ",";
 	int sharePointProcessedPrims[];	//keep track of prims that have been processed.
 
-
-	string thisShareSplit[] = split(oneSimpleShare,",");  // {J1,J2,J3,J4}
+	string thisShareSplit[] = split(oneSimpleShare,",");  //",4,5," pointless prims.
 	int I_removablePrimitiveInShare[];
 	foreach(string s; thisShareSplit){
 		push(I_removablePrimitiveInShare, atoi(s));
@@ -231,18 +241,21 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 		int ends[];push(ends,end1);push(ends,end2);
 		int allConnectedPrims[] = pointprims(0,end1);
 		int otherPrims[] = pointprims(0,end2);
-
-		//Make THESEPRIMS a list of all connected primitives/edges!
-		foreach(int p2; otherPrims){
-			push(allConnectedPrims,p2);
-		}
+		foreach(int oneOtherPrim; otherPrims){
+			push(allConnectedPrims,oneOtherPrim);
+		} //ALLCONNECTEDPRIMS = all edges attached to this prim.
 
 		for(int sp=0;sp<len(allConnectedPrims);sp++){// sp = abbriviation for "selected prim"
 			int thisprim= allConnectedPrims[sp];
 			//Is this prim regular? (not to be removed?) && does this prim exist in processedPrims?
 			if(find(sharePointProcessedPrims,thisprim)<0&&find(pointlessPrims,thisprim)<0){
 				push(sharePointProcessedPrims,thisprim);//don't process again.
+
+
 				output= output + itoa(thisprim) +",";
+
+				//unsolved:
+				
 				//Where is this point on this prim, initial or terminal? // for direction
 				//How to solve: get first point of primitive, if first point equals current end. shareDirection = True = 1 = out;
 				int thisPrimsPoints[] = primpoints(0,thisprim);
@@ -270,11 +283,33 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 				}
 			}
 		}
-	push(sharePrims,			output);
-	push(shareDirection,	directionoutput);
-	push(firstValidPoint,	firstValid);
+		if(rpis==len(I_removablePrimitiveInShare)-1){ //only push once collection is complete.
+		push(sharePrims,			output);
+		push(shareDirection,	directionoutput);
+		push(firstValidPoint,	firstValid);
+		}
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //calc new location.
 vector V_shareLoc[];
