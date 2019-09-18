@@ -91,9 +91,14 @@ for(int pPrimCheck=0;pPrimCheck<nprimitives(0);pPrimCheck++){
 	int numberOfActivePoints = 0;
 	int pPoints[] = primpoints(0,pPrimCheck);
 	for(int pp=0;pp<len(pPoints);pp++){
-		if(find(pointsTooClose,pp)<0){
-			numberOfActivePoints++;//if point is not found, then it is active
-			break;//stop searching after first one is found.
+		int focusedPoint = pPoints[pp];
+		if(find(pointsTooClose,focusedPoint)<1){
+			printf("prim: %f, found point: %f\\n",pPrimCheck,focusedPoint);
+			int nCount = neighbourcount(0,focusedPoint);
+			if(nCount<3){//Check to see if is a junction.
+				numberOfActivePoints++;//if point is not found, then it is active
+				break;//stop searching after first one is found.
+			}
 		}
 	}
 	if(numberOfActivePoints==0){
@@ -134,18 +139,21 @@ for(int j=0;j<len(originalJunctions);j++){//each junction
 //		yes: break. (optimization)
 //		no : next question...
 //			2. BURN PROCESS. Find all adjacent pointless siblings. and create+assign to new share.
-string sharesSimple[]={""}; //Pointless primitive sets.  EG: "{1,2,8,54","101,102,103"} < pointlessprims that share starts or ends with or more of each other. 
+string sharesSimple[]; //Pointless primitive sets.  EG: "{1,2,8,54","101,102,103"} < pointlessprims that share starts or ends with or more of each other. 
 for(int i=0;i<len(pointlessPrims);i++){
 	int edge = pointlessPrims[i];
 	string s_edge = ","+itoa(edge)+",";
-	for(int n=0;n<len(sharesSimple);n++){//need to ask question in all sets.
-		int findResult = find(sharesSimple[n],s_edge);
-		//Q1 : does this pointless prim exist in a share?
-		if(findResult>-1){
-			//Q1.yes!
+
+
+	int findResultAllIndices = 0;
+	foreach(string oneStringInSharesSimple; sharesSimple){
+		if(find(oneStringInSharesSimple,s_edge)>-1){
+			//if found
+			findResultAllIndices=1;
 			break;
 		}
-		else{
+	}
+	if(findResultAllIndices==0){//if not found, new entry needed
 			//We will be creating a new share, because all adjacents will be gathered in one go!
 			int newPrims[];	push(newPrims,edge); // < initially only has this edge, records edges/prims that are connected to current.
 			int processedPrims[];  //flag. do not process primitives 
@@ -192,8 +200,7 @@ for(int i=0;i<len(pointlessPrims);i++){
 			foreach(int p; newPrims){
 				S_newShare+=itoa(p)+",";
 			}
-			push(sharesSimple,S_newShare);
-		}
+			push(sharesSimple,S_newShare); 
 	}
 }
 
@@ -473,17 +480,17 @@ for(int sweep=0; sweep<len(pointlessPrims);sweep++){
 			lastLeft = pl;
 	}
 }
-printf("originalJunctions: %f\\n",originalJunctions);
-printf("pointsTooClose: %f\\n",pointsTooClose);
-printf("pointlessPrims: %f\\n",pointlessPrims);
-printf("specialIntersections: %f\\n",specialIntersections);
-printf("sharesSimple: %f\\n",sharesSimple);
-printf("sharePrims: %f\\n",sharePrims);
-printf("shareDirection: %f\\n",shareDirection);
-printf("firstValidPoint: %f\\n",firstValidPoint);
-printf("V_shareLoc: %f\\n",V_shareLoc);
-printf("offsets: %f\\n",offsets);
-printf("pointleafleaf: %f\\n",pointleafleaf);
+printf("originalJunctions: %f\\n",		originalJunctions);
+printf("pointsTooClose: %f\\n",				pointsTooClose);
+printf("pointlessPrims: %f\\n",				pointlessPrims);
+printf("specialIntersections: %f\\n",	specialIntersections);
+printf("sharesSimple: %f\\n",					sharesSimple);
+printf("sharePrims: %f\\n",						sharePrims);
+printf("shareDirection: %f\\n",				shareDirection);
+printf("firstValidPoint: %f\\n",			firstValidPoint);
+printf("V_shareLoc: %f\\n",						V_shareLoc);
+printf("offsets: %f\\n",							offsets);
+printf("pointleafleaf: %f\\n",				pointleafleaf);
 
 //Create the Junctions.
 
