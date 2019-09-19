@@ -57,7 +57,7 @@
 		}
 	}
 //constants
-	float diameter = 1.4;
+	float diameter = 1.1;
 	float radius = diameter/2;
 	float pi = 3.14159264;
 	float tau = 3.14159264*2;
@@ -240,49 +240,22 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 				push(sharePointProcessedPrims,thisprim);//don't process again.
 				output= output + itoa(thisprim) +",";
 				push(I_output,thisprim);
-
-				/*
-				//unsolved:
-					//Where is this point on this prim, initial or terminal? // for direction
-					//How to solve: get first point of primitive, if first point equals current end. shareDirection = True = 1 = out;
-					int thisPrimsPoints[] = primpoints(0,thisprim);
-					int FirstPoint = thisPrimsPoints[0];
-					if(find(ends, FirstPoint)>-1){
-						directionoutput = directionoutput + "1,";
-						//get first valid point
-						for(int pointwalk=1;pointwalk<len(thisPrimsPoints);pointwalk++){ //direction is 1 so walk from 0, ++. ALSO! 0 is a junction, so start at 1.
-							int thisPNT = thisPrimsPoints[pointwalk];
-							if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
-								firstValid= firstValid + itoa(thisPNT)+",";
-								break;
-							}
-						}
-					}else{//end1 != ppointFirst 
-						directionoutput = directionoutput + "0,";
-						//get first valid point
-						for(int pointwalk= len(thisPrimsPoints)-2;pointwalk>=0;pointwalk--){ //direction is 0 so walk from MAX, --. ALSO! last is a junction, so start at -2.
-							int thisPNT = thisPrimsPoints[pointwalk];
-							if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
-								firstValid= firstValid + itoa(thisPNT)+",";
-								break;
-							}
-						}
-					}
-					*/
 			}
 		}
-		if(rpis==len(I_removablePrimitiveInShare)-1){ //only push once collection is complete.
-			push(sharePrims,output);
+		if(rpis==len(I_removablePrimitiveInShare)-1){ //special checks on last loop, before submitting final answer.
 
+			int extraOutput[];
+			int extraPoints[];
+			int extraDirections[];
 			//for each of I_output, determine if endpoints exist in set.
-			int I_output_cache = I_output;//cache output, because it will change.
+			int I_output_cache[] = I_output;//cache output, because it will change.
 			for(int i=0;i<len(I_output_cache);i++){
 				int thisoutput = I_output_cache[i]; //one connected prim
-				int thisoutputPoints = primpoints(0,thisoutput);
+				int thisoutputPoints[] = primpoints(0,thisoutput);
 				int fpoint= thisoutputPoints[0];
 				int tpoint= thisoutputPoints[-1]; 
 	
-				//all pointless ends?
+				//all pointless ends.
 				int pointlessEnds[];
 				foreach(int pointlessEdge;I_removablePrimitiveInShare){
 					int plends[] = primpoints(0,pointlessEdge);
@@ -290,53 +263,61 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 					push(pointlessEnds,plends[-1]);
 				}
 
-				int extraPoints[];
-				int extraDirections[];
+				// original location // int extraOutput[];
+				// original location // int extraPoints[];
+				// original location // int extraDirections[];
 				if(find(pointlessEnds,fpoint)>-1){//check if first point exists in junction. 
-					//walk to first valid point..
-					foreach(int outputPoint;thisoutputPoints){
-						if(find(pointsTooClose,outputPoint)<0){//point is not too close.
-							firstValidPoint = firstValidPoint + itoa(outputPoint)+","; 
+					foreach(int walkForwardPoint;thisoutputPoints){//walk to first valid point..
+						if(find(pointsTooClose,walkForwardPoint)<0){//point is not too close.
+							firstValid = firstValid + itoa(walkForwardPoint)+","; 
 							directionoutput = directionoutput + "1,";
 							//now we check to see if the end also belongs to this intersection.
-							if(find(pointlessEnds,tpoint)>-1){//check to see if last point exists in junction.
-								push()
-
+							if(find(pointlessEnds,tpoint)>-1){//check to see if last point ALSO exists in junction. (loop detection)
+								
+								int reversedPoints[] = reverse(thisoutputPoints);
+								foreach(int walkBackwardsPoint;reversedPoints){//walk reverse to first terminal that is valid
+									if(find(pointsTooClose,walkBackwardsPoint)<0){//if not too close
+										push(extraOutput, thisoutput);
+										push(extraPoints, walkBackwardsPoint);
+										push(extraDirections, 0);
+										break;
+									}
+								}
 							}
+							break;
 						}
 					}
 				}
-				
-	
-	
+				else if(find(pointlessEnds,tpoint)>-1){//else check if last point exists in junction.
+					foreach(int walkBackwardsPoint;reverse(thisoutputPoints)){//walk backwards to first point that is valid.
+						if(find(pointsTooClose,walkBackwardsPoint)<0){//point is not too close.
+							firstValid = firstValid + itoa(walkBackwardsPoint)+","; 
+							directionoutput = directionoutput + "0,";
+							//no need to also check first, we already did.
+							break;
+						}
+					}
+				}
+
+				//APPEND EXTRAS!
 			}
-	
-	
-	
-			push(shareDirection,	directionoutput);
+			//append extras.
+			foreach(int eO; extraOutput){
+				output = output + itoa(eO)+",";
+			}
+			foreach(int eP; extraPoints){
+				firstValid = firstValid + itoa(eP)+ ",";
+			}
+			foreach(int eD; extraDirections){
+				directionoutput = directionoutput + itoa(eD)+ ",";
+			}
+
+			push(sharePrims,output);
 			push(firstValidPoint,	firstValid);
+			push(shareDirection,	directionoutput);
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 //calc new location.
@@ -419,140 +400,146 @@ for(int k=0; k<len(sharePrims);k++){
 
 //SWEEP --LETS DO THIS.
 int pointleafleaf[]; //each prim contains 6 entries. start,leaf,leaf,end,leaf,leaf.
-for(int sweep=0; sweep<len(pointlessPrims);sweep++){
-	int thisprim = pointlessPrims[sweep];
-	//for each prim get a list of points that are not too close.
-	//mach list with angles.
-	int allpoints[] = primpoints(0,thisprim);
-	//create list of points that are not too close.
-	int notremoved[];
-	if(len(notremoved) == 0){ //don't sweep if no points are valid.
-		//escape, nothing to sweep on this primitive.
-		break;
-	}
-	foreach(int unfilteredpoint; allpoints){
-		if(find(pointsTooClose,unfilteredpoint)>-1){
-			push(notremoved,unfilteredpoint);
-		}
-	}
-	float notRemovedAngles[];
-	//now we calculate the angles to accompany points that were not removed.
-	for(int angleCalc=0; angleCalc<len(notremoved);angleCalc++){
-		int thisPoint = notremoved[angleCalc];
-			
-		//Operation Summary:
-			//if unfiltered point is not last unfiltered:
-			//	angle is this unfiltered to next unfiltered
-			//if unfiltered point is last unfiltered:
-			//	if unfiltered point is also last general point :
-			//		angle is this unfiltered to previous general point  +180° 
-			//	else:
-			//		angle is this unfiltered point to last general point
-
-		if(thisPoint!=notremoved[-1]){//if not last unfiltered.
-			vector locationA = point(0,"P",thisPoint);//from
-			vector locationB = point(0,"P",notremoved[angleCalc+1]);//to
-			float deltax = locationB[0]-locationA[0];
-			float deltaz = locationB[2]-locationA[2];
-			float atan2result = atan2(deltaz,deltax);
-			push(notRemovedAngles,atan2result);
-		}else{//is last unfiltered.
-			int lastPointInPrim = allpoints[-1];
-			if(thisPoint==lastPointInPrim){//this last unfiltered is also last point in prim.
-				//angle from second from last to last.
-				vector locationA = point(0,"P",allpoints[-2]);//from last-1
-				vector locationB = point(0,"P",thisPoint);//to last
-				float deltax = locationB[0]-locationA[0];
-				float deltaz = locationB[2]-locationA[2];
-				float atan2result = atan2(deltaz,deltax);
-				push(notRemovedAngles,atan2result);
-			}else{
-				//angle from last general point.
-				int indexOf = find(allpoints,thisPoint);
-				int previousGeneral = allpoints[indexOf-1]; 
-				vector locationA = point(0,"P",previousGeneral);//from last-1
-				vector locationB = point(0,"P",thisPoint);//to last
-				float deltax = locationB[0]-locationA[0];
-				float deltaz = locationB[2]-locationA[2];
-				float atan2result = atan2(deltaz,deltax);
-				push(notRemovedAngles,atan2result);
+int startingPrimCount = nprimitives(0);
+printf("starting prim count: %f\\n",startingPrimCount);
+for(int sweep=0; sweep<startingPrimCount;sweep++){
+	if(find(pointlessPrims,sweep)<0){//if prim is not pointless.
+		//for each prim get a list of points that are not too close.
+		//mach list with angles.
+		int allpoints[] = primpoints(0,sweep);
+		//create list of points that are not too close.
+		int notremoved[];
+		foreach(int unfilteredpoint; allpoints){
+			if(find(pointsTooClose,unfilteredpoint)<0){
+				push(notremoved,unfilteredpoint);
 			}
 		}
-	}
 
-	//CREATE NEW POINTS USING THESE ANGLES.
-	int lastCenter = -1;
-	int lastRight = -1;
-	int lastLeft = -1;
-	for(int sweepOP = 0; sweepOP<len(notremoved);sweepOP++){
-		int   thispoint = notremoved[sweepOP];
-		float thisangle = notRemovedAngles[sweepOP];
-		vector thisLocation = point(0,"P",thispoint);
-		vector thisUV = point(0,"uv",thispoint);
-		float m90 = clampAngle(thisangle-pi/2);
-		float p90 = clampAngle(thisangle+pi/2);
-
-		vector locL= set(
-			thisLocation[0]+radius*cos(m90),
-			0,
-			thisLocation[2]+radius*sin(m90));
-		vector locR= set(
-			thisLocation[0]+radius*cos(p90),
-			0,
-			thisLocation[2]+radius*sin(p90));
-		int pl = addpoint(0,locL);
-		int pr = addpoint(0,locR);
-
-		vector upUV = set(
-			thisUV[0],
-			1,
-			0);
-		vector downUV = set(
-			thisUV[0],
-			0,
-			0);
-		int pass = setpointattrib(0, "uv", pl, upUV, "set");
-		int pass1 = setpointattrib(0, "uv", pr, downUV, "set");
-
-		if(sweepOP==0){//is first
-			push(pointleafleaf,thispoint); //pointleafleaf defined on line 349.
-			push(pointleafleaf,pl);
-			push(pointleafleaf,pr);
+		float notRemovedAngles[];
+		//now we calculate the angles to accompany points that were not removed.
+		for(int angleCalc=0; angleCalc<len(notremoved);angleCalc++){
+			int thisPoint = notremoved[angleCalc];
+				
+			//Operation Summary:
+				//if unfiltered point is not last unfiltered:
+				//	angle is this unfiltered to next unfiltered
+				//if unfiltered point is last unfiltered:
+				//	if unfiltered point is also last general point :
+				//		angle is this unfiltered to previous general point  +180° 
+				//	else:
+				//		angle is this unfiltered point to last general point
+	
+			if(thisPoint!=notremoved[-1]){//if not last unfiltered.
+				vector locationA = point(0,"P",thisPoint);//from
+				vector locationB = point(0,"P",notremoved[angleCalc+1]);//to
+				float deltax = locationB[0]-locationA[0];
+				float deltaz = locationB[2]-locationA[2];
+				float atan2result = atan2(deltaz,deltax);
+				push(notRemovedAngles,atan2result);
+			}else{//is last unfiltered.
+				int lastPointInPrim = allpoints[-1];
+				if(thisPoint==lastPointInPrim){//this last unfiltered is also last point in prim.
+					//angle from second from last to last.
+					vector locationA = point(0,"P",allpoints[-2]);//from last-1
+					vector locationB = point(0,"P",thisPoint);//to last
+					float deltax = locationB[0]-locationA[0];
+					float deltaz = locationB[2]-locationA[2];
+					float atan2result = atan2(deltaz,deltax);
+					push(notRemovedAngles,atan2result);
+				}else{
+					//angle from last general point.
+					int indexOf = find(allpoints,thisPoint);
+					int previousGeneral = allpoints[indexOf-1]; 
+					vector locationA = point(0,"P",previousGeneral);//from last-1
+					vector locationB = point(0,"P",thisPoint);//to last
+					float deltax = locationB[0]-locationA[0];
+					float deltaz = locationB[2]-locationA[2];
+					float atan2result = atan2(deltaz,deltax);
+					push(notRemovedAngles,atan2result);
+				}
+			}
 		}
-		if(sweepOP==len(notremoved)-1){//is last
-			push(pointleafleaf,thispoint);
-			push(pointleafleaf,pl);
-			push(pointleafleaf,pr);
+
+		//CREATE NEW POINTS USING THESE ANGLES.
+		int lastCenter = -1;
+		int lastRight = -1;
+		int lastLeft = -1;
+		for(int sweepOP = 0; sweepOP<len(notremoved);sweepOP++){
+			int   thispoint = notremoved[sweepOP];
+			float thisangle = notRemovedAngles[sweepOP];
+			vector thisLocation = point(0,"P",thispoint);
+			vector thisUV = point(0,"uv",thispoint);
+			float m90 = clampAngle(thisangle-pi/2);
+			float p90 = clampAngle(thisangle+pi/2);
+	
+			vector locL= set(
+				thisLocation[0]+radius*cos(m90),
+				0,
+				thisLocation[2]+radius*sin(m90));
+			vector locR= set(
+				thisLocation[0]+radius*cos(p90),
+				0,
+				thisLocation[2]+radius*sin(p90));
+			int pl = addpoint(0,locL);
+			int pr = addpoint(0,locR);
+	
+			vector upUV = set(
+				thisUV[0],
+				1,
+				0);
+			vector downUV = set(
+				thisUV[0],
+				0,
+				0);
+			int pass = setpointattrib(0, "uv", pl, upUV, "set");
+			int pass1 = setpointattrib(0, "uv", pr, downUV, "set");
+	
+			if(sweepOP==0){//is first
+				push(pointleafleaf,thispoint); //pointleafleaf defined on line 349.
+				push(pointleafleaf,pl);
+				push(pointleafleaf,pr);
+			}
+			if(sweepOP==len(notremoved)-1){//is last
+				push(pointleafleaf,thispoint);
+				push(pointleafleaf,pl);
+				push(pointleafleaf,pr);
+			}
+	
+			if(lastCenter!=-1){//if we have processed a set already, now we can begin connecting trios.
+				int leftface = addprim(0,'poly');
+				addvertex(0,leftface, lastLeft);
+				addvertex(0,leftface, lastCenter);
+				addvertex(0,leftface, thispoint);
+				addvertex(0,leftface, pl);
+				int rightface = addprim(0,'poly');
+				addvertex(0,rightface, lastCenter);
+				addvertex(0,rightface, lastRight);
+				addvertex(0,rightface, pr);
+				addvertex(0,rightface, thispoint);
+			}
+			//update last.
+				lastCenter = thispoint;
+				lastRight = pr;
+				lastLeft = pl;
 		}
 
-		if(lastCenter!=-1){//if we have processed a set already, now we can begin connecting trios.
-			int leftface = addprim(0,'poly');
-			addvertex(0,leftface, lastLeft);
-			addvertex(0,leftface, lastCenter);
-			addvertex(0,leftface, thispoint);
-			addvertex(0,leftface, pl);
-			int rightface = addprim(0,'poly');
-			addvertex(0,rightface, lastCenter);
-			addvertex(0,rightface, lastRight);
-			addvertex(0,rightface, pr);
-			addvertex(0,rightface, thispoint);
-		}
-		//update last.
-			lastCenter = thispoint;
-			lastRight = pr;
-			lastLeft = pl;
-	}
-}
-printf("originalJunctions: %f\\n",		originalJunctions);
-printf("pointsTooClose: %f\\n",				pointsTooClose);
-printf("pointlessPrims: %f\\n",				pointlessPrims);
-printf("specialIntersections: %f\\n",	specialIntersections);
-printf("sharesSimple: %f\\n",					sharesSimple);
-printf("sharePrims: %f\\n",						sharePrims);
-printf("shareDirection: %f\\n",				shareDirection);
-printf("firstValidPoint: %f\\n",			firstValidPoint);
-printf("V_shareLoc: %f\\n",						V_shareLoc);
-printf("offsets: %f\\n",							offsets);
+	}//end bracket if not pointless.
+}//end bracket for all primitives.
+
+
+
+
+
+//printf("originalJunctions: %f\\n",		originalJunctions);
+//printf("pointsTooClose: %f\\n",				pointsTooClose);
+//printf("pointlessPrims: %f\\n",				pointlessPrims);
+//printf("specialIntersections: %f\\n",	specialIntersections);
+//printf("sharesSimple: %f\\n",					sharesSimple);
+//printf("sharePrims: %f\\n",						sharePrims);
+//printf("shareDirection: %f\\n",				shareDirection);
+//printf("firstValidPoint: %f\\n",			firstValidPoint);
+//printf("V_shareLoc: %f\\n",						V_shareLoc);
+//printf("offsets: %f\\n",							offsets);
 printf("pointleafleaf: %f\\n",				pointleafleaf);
 
 //Create the Junctions.
