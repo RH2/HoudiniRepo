@@ -203,25 +203,13 @@ for(int i=0;i<len(pointlessPrims);i++){
 	}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 //TODO: get sharepoints  
 string sharePrims[];		//for each group of edges, there will be a group of *non removed* edges connected (PRIMS!).
 string shareDirection[]; //1=out, 0=in // maps to the above.
 string firstValidPoint[]; //walk edge until first usable point.	(POINTS!)
 
 foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/primitives
+	int I_output[];
 	string output 					= ",";
 	string directionoutput  = ",";
 	string firstValid 			= ",";
@@ -250,43 +238,83 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 			//Is this prim regular? (not to be removed?) && does this prim exist in processedPrims?
 			if(find(sharePointProcessedPrims,thisprim)<0&&find(pointlessPrims,thisprim)<0){
 				push(sharePointProcessedPrims,thisprim);//don't process again.
-
-
 				output= output + itoa(thisprim) +",";
+				push(I_output,thisprim);
 
+				/*
 				//unsolved:
-				
-				//Where is this point on this prim, initial or terminal? // for direction
-				//How to solve: get first point of primitive, if first point equals current end. shareDirection = True = 1 = out;
-				int thisPrimsPoints[] = primpoints(0,thisprim);
-				int FirstPoint = thisPrimsPoints[0];
-				if(find(ends, FirstPoint)>-1){
-					directionoutput = directionoutput + "1,";
-					//get first valid point
-					for(int pointwalk=1;pointwalk<len(thisPrimsPoints);pointwalk++){ //direction is 1 so walk from 0, ++. ALSO! 0 is a junction, so start at 1.
-						int thisPNT = thisPrimsPoints[pointwalk];
-						if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
-							firstValid= firstValid + itoa(thisPNT)+",";
-							break;
+					//Where is this point on this prim, initial or terminal? // for direction
+					//How to solve: get first point of primitive, if first point equals current end. shareDirection = True = 1 = out;
+					int thisPrimsPoints[] = primpoints(0,thisprim);
+					int FirstPoint = thisPrimsPoints[0];
+					if(find(ends, FirstPoint)>-1){
+						directionoutput = directionoutput + "1,";
+						//get first valid point
+						for(int pointwalk=1;pointwalk<len(thisPrimsPoints);pointwalk++){ //direction is 1 so walk from 0, ++. ALSO! 0 is a junction, so start at 1.
+							int thisPNT = thisPrimsPoints[pointwalk];
+							if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
+								firstValid= firstValid + itoa(thisPNT)+",";
+								break;
+							}
+						}
+					}else{//end1 != ppointFirst 
+						directionoutput = directionoutput + "0,";
+						//get first valid point
+						for(int pointwalk= len(thisPrimsPoints)-2;pointwalk>=0;pointwalk--){ //direction is 0 so walk from MAX, --. ALSO! last is a junction, so start at -2.
+							int thisPNT = thisPrimsPoints[pointwalk];
+							if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
+								firstValid= firstValid + itoa(thisPNT)+",";
+								break;
+							}
 						}
 					}
-				}else{//end1 != ppointFirst 
-					directionoutput = directionoutput + "0,";
-					//get first valid point
-					for(int pointwalk= len(thisPrimsPoints)-2;pointwalk>=0;pointwalk--){ //direction is 0 so walk from MAX, --. ALSO! last is a junction, so start at -2.
-						int thisPNT = thisPrimsPoints[pointwalk];
-						if(find(pointsTooClose,thisPNT)<0){ //if not found AKA not too close.
-							firstValid= firstValid + itoa(thisPNT)+",";
-							break;
-						}
-					}
-				}
+					*/
 			}
 		}
 		if(rpis==len(I_removablePrimitiveInShare)-1){ //only push once collection is complete.
-		push(sharePrims,			output);
-		push(shareDirection,	directionoutput);
-		push(firstValidPoint,	firstValid);
+			push(sharePrims,output);
+
+			//for each of I_output, determine if endpoints exist in set.
+			int I_output_cache = I_output;//cache output, because it will change.
+			for(int i=0;i<len(I_output_cache);i++){
+				int thisoutput = I_output_cache[i]; //one connected prim
+				int thisoutputPoints = primpoints(0,thisoutput);
+				int fpoint= thisoutputPoints[0];
+				int tpoint= thisoutputPoints[-1]; 
+	
+				//all pointless ends?
+				int pointlessEnds[];
+				foreach(int pointlessEdge;I_removablePrimitiveInShare){
+					int plends[] = primpoints(0,pointlessEdge);
+					push(pointlessEnds,plends[0]);
+					push(pointlessEnds,plends[-1]);
+				}
+
+				int extraPoints[];
+				int extraDirections[];
+				if(find(pointlessEnds,fpoint)>-1){//check if first point exists in junction. 
+					//walk to first valid point..
+					foreach(int outputPoint;thisoutputPoints){
+						if(find(pointsTooClose,outputPoint)<0){//point is not too close.
+							firstValidPoint = firstValidPoint + itoa(outputPoint)+","; 
+							directionoutput = directionoutput + "1,";
+							//now we check to see if the end also belongs to this intersection.
+							if(find(pointlessEnds,tpoint)>-1){//check to see if last point exists in junction.
+								push()
+
+							}
+						}
+					}
+				}
+				
+	
+	
+			}
+	
+	
+	
+			push(shareDirection,	directionoutput);
+			push(firstValidPoint,	firstValid);
 		}
 	}
 }
