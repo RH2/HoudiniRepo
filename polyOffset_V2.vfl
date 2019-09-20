@@ -407,11 +407,17 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 		//for each prim get a list of points that are not too close.
 		//mach list with angles.
 		int allpoints[] = primpoints(0,sweep);
+		int allverts[] = primvertices(0,sweep);
 		//create list of points that are not too close.
 		int notremoved[];
-		foreach(int unfilteredpoint; allpoints){
+		int vert_notremoved[];
+
+
+
+		foreach(int index; int unfilteredpoint; allpoints){
 			if(find(pointsTooClose,unfilteredpoint)<0){
 				push(notremoved,unfilteredpoint);
+				push(vert_notremoved,allverts[index]);
 			}
 		}
 
@@ -419,6 +425,7 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 		//now we calculate the angles to accompany points that were not removed.
 		for(int angleCalc=0; angleCalc<len(notremoved);angleCalc++){
 			int thisPoint = notremoved[angleCalc];
+			int vert_thisPoint = vert_notremoved[angleCalc];
 				
 			//Operation Summary:
 				//if unfiltered point is not last unfiltered:
@@ -428,7 +435,6 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 				//		angle is this unfiltered to previous general point  +180° 
 				//	else:
 				//		angle is this unfiltered point to last general point
-	
 			if(thisPoint!=notremoved[-1]){//if not last unfiltered.
 				vector locationA = point(0,"P",thisPoint);//from
 				vector locationB = point(0,"P",notremoved[angleCalc+1]);//to
@@ -464,11 +470,14 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 		int lastCenter = -1;
 		int lastRight = -1;
 		int lastLeft = -1;
-		for(int sweepOP = 0; sweepOP<len(notremoved);sweepOP++){
-			int   thispoint = notremoved[sweepOP];
-			float thisangle = notRemovedAngles[sweepOP];
+		vector UV_lastCenter;
+		vector UV_lastRight;
+		vector UV_lastLeft;
+		for(int pointIterator = 0; pointIterator<len(notremoved);pointIterator++){
+			int   thispoint = notremoved[pointIterator];
+			float thisangle = notRemovedAngles[pointIterator];
+			vector thisUV = vertex(0,"uv",vert_notremoved[pointIterator]);
 			vector thisLocation = point(0,"P",thispoint);
-			vector thisUV = point(0,"uv",thispoint);
 			float m90 = clampAngle(thisangle-pi/2);
 			float p90 = clampAngle(thisangle+pi/2);
 	
@@ -491,36 +500,49 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 				thisUV[0],
 				0,
 				0);
-			int pass = setpointattrib(0, "uv", pl, upUV, "set");
-			int pass1 = setpointattrib(0, "uv", pr, downUV, "set");
+			//int pass = setpointattrib(0, "uv", pl, upUV, "set");
+			//int pass1 = setpointattrib(0, "uv", pr, downUV, "set");
 	
-			if(sweepOP==0){//is first
+			if(pointIterator==0){//is first
 				push(pointleafleaf,thispoint); //pointleafleaf defined on line 349.
 				push(pointleafleaf,pl);
 				push(pointleafleaf,pr);
 			}
-			if(sweepOP==len(notremoved)-1){//is last
+			if(pointIterator==len(notremoved)-1){//is last
 				push(pointleafleaf,thispoint);
 				push(pointleafleaf,pl);
 				push(pointleafleaf,pr);
 			}
 	
 			if(lastCenter!=-1){//if we have processed a set already, now we can begin connecting trios.
+				int pass;
 				int leftface = addprim(0,'poly');
-				addvertex(0,leftface, lastLeft);
-				addvertex(0,leftface, lastCenter);
-				addvertex(0,leftface, thispoint);
-				addvertex(0,leftface, pl);
+				int v1 = addvertex(0,leftface, lastLeft);
+					pass= setvertexattrib(0,"uv",-1,v1,UV_lastLeft,"set");
+				int v2 = addvertex(0,leftface, lastCenter);
+					pass= setvertexattrib(0,"uv",-1,v2,UV_lastCenter,"set");
+				int v3 = addvertex(0,leftface, thispoint);
+					pass= setvertexattrib(0,"uv",-1,v3,thisUV,"set");
+				int v4 = addvertex(0,leftface, pl);					
+					pass= setvertexattrib(0,"uv",-1,v4,upUV,"set");
 				int rightface = addprim(0,'poly');
-				addvertex(0,rightface, lastCenter);
-				addvertex(0,rightface, lastRight);
-				addvertex(0,rightface, pr);
-				addvertex(0,rightface, thispoint);
+				int v5 = addvertex(0,rightface, lastCenter);
+					pass= setvertexattrib(0,"uv",-1,v5,UV_lastCenter,"set");
+				int v6 = addvertex(0,rightface, lastRight);
+					pass= setvertexattrib(0,"uv",-1,v6,UV_lastRight,"set");
+				int v7 = addvertex(0,rightface, pr);					
+					pass= setvertexattrib(0,"uv",-1,v7,downUV,"set");
+				int v8 = addvertex(0,rightface, thispoint);
+					pass= setvertexattrib(0,"uv",-1,v8,thisUV,"set");
 			}
 			//update last.
 				lastCenter = thispoint;
 				lastRight = pr;
 				lastLeft = pl;
+				UV_lastCenter= thisUV; 
+				UV_lastLeft  = upUV;
+				UV_lastRight = downUV;
+			
 		}
 
 	}//end bracket if not pointless.
