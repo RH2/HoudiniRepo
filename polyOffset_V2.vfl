@@ -367,9 +367,9 @@ for(int k=0; k<len(sharePrims);k++){
 	string S_thisDirections = shareDirection[k];
 	string S_theseClosePoints =  firstValidPoint[k];
 	//convert these strings to integer arrays.
-	int I_thesePrims[];					foreach(string x;S_thisPrimSet)			{push(I_thesePrims,				atoi(x)	);}	
-	int I_theseDirections[];		foreach(string x;S_thisDirections)	{push(I_theseDirections,	atoi(x)	);}
-	int I_theseClosePoints[];		foreach(string x;S_theseClosePoints){push(I_theseClosePoints,	atoi(x)	);}
+	int I_thesePrims[];					foreach(string x;split(S_thisPrimSet,","))			{push(I_thesePrims,				atoi(x)	);}	
+	int I_theseDirections[];		foreach(string x;split(S_thisDirections,","))	{push(I_theseDirections,	atoi(x)	);}
+	int I_theseClosePoints[];		foreach(string x;split(S_theseClosePoints,",")){push(I_theseClosePoints,	atoi(x)	);}
 
 	//all of these arrays should be 1:1
 	for(int x = 0; x<len(I_thesePrims);x++){
@@ -530,19 +530,24 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 
 
 
-//printf("originalJunctions: %f\\n",		originalJunctions);
-//printf("pointsTooClose: %f\\n",				pointsTooClose);
-//printf("pointlessPrims: %f\\n",				pointlessPrims);
-//printf("specialIntersections: %f\\n",	specialIntersections);
-//printf("sharesSimple: %f\\n",					sharesSimple);
-//printf("sharePrims: %f\\n",						sharePrims);
-//printf("shareDirection: %f\\n",				shareDirection);
-//printf("firstValidPoint: %f\\n",			firstValidPoint);
-//printf("V_shareLoc: %f\\n",						V_shareLoc);
-//printf("offsets: %f\\n",							offsets);
+printf("originalJunctions: %f\\n",		originalJunctions);
+printf("pointsTooClose: %f\\n",				pointsTooClose);
+printf("pointlessPrims: %f\\n",				pointlessPrims);
+printf("specialIntersections: %f\\n",	specialIntersections);
+printf("sharesSimple: %f\\n",					sharesSimple);
+printf("sharePrims: %f\\n",						sharePrims);
+printf("shareDirection: %f\\n",				shareDirection);
+printf("firstValidPoint: %f\\n",			firstValidPoint);
+printf("V_shareLoc: %f\\n",						V_shareLoc);
+printf("offsets: %f\\n",							offsets);
 printf("pointleafleaf: %f\\n",				pointleafleaf);
 
 //Create the Junctions.
+
+
+
+
+
 
 //INGREDIENTS:
 //originalJunctions[];
