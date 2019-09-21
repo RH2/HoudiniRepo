@@ -56,6 +56,42 @@
 			Set+=itoa(i);
 		}
 	}
+
+	void drawAngle(vector position;float scale; float radians; vector color){
+	  //draw a circle with 10 points.
+	  int circle = addprim(0,"polyline");
+	  float total = 36;
+	  float pi = 3.141592;
+	  for(int points=0;points<total;points++){
+	        float fraction = points/total;
+	        int p = addpoint(0, set(position[0]+cos(fraction*2*pi)*scale ,position[1],position[2]+sin(fraction*2*pi)*scale));
+	        int pass = setpointattrib(0, "Cd", p, color/5, "set");
+	        addvertex(0, circle, p);
+	  }
+	  int p = addpoint(0, set(position[0]+1*scale ,position[1],position[2]+0*scale));
+	  int pass = setpointattrib(0, "Cd", p, color/5, "set");
+	  addvertex(0, circle, p);
+	  //draw angle
+	  int direction = addprim(0,"polyline");
+	  int p0 = addpoint(0,position);
+	  int p1 = addpoint(0,set(position[0]+cos(radians)*scale ,position[1],position[2]+sin(radians)*scale));
+	  pass = setpointattrib(0, "Cd", p0, color*2, "set");
+	  pass = setpointattrib(0, "Cd", p1, color*2, "set");
+	
+	  addvertex(0,direction,p0);
+	  addvertex(0,direction,p1);
+	
+	  int reference = addprim(0,"polyline");
+	  int p00 = addpoint(0, set(position[0]+(1*scale),position[1],position[2]+(0*scale)));
+	  int p01 = addpoint(0, set(position[0]+(1.2*scale),position[1],position[2]+(0*scale)));
+	  pass = setpointattrib(0, "Cd", p00, color, "set");
+	  pass = setpointattrib(0, "Cd", p01, color, "set");
+	  addvertex(0,reference,p00);
+	  addvertex(0,reference,p01);
+	}
+
+
+
 //constants
 	float diameter = 1.1;
 	float radius = diameter/2;
@@ -401,7 +437,6 @@ for(int k=0; k<len(sharePrims);k++){
 //SWEEP --LETS DO THIS.
 int pointleafleaf[]; //each prim contains 6 entries. start,leaf,leaf,end,leaf,leaf.
 int startingPrimCount = nprimitives(0);
-printf("starting prim count: %f\\n",startingPrimCount);
 for(int sweep=0; sweep<startingPrimCount;sweep++){
 	if(find(pointlessPrims,sweep)<0){//if prim is not pointless.
 		//for each prim get a list of points that are not too close.
@@ -489,8 +524,11 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 				thisLocation[0]+radius*cos(p90),
 				0,
 				thisLocation[2]+radius*sin(p90));
+
 			int pl = addpoint(0,locL);
+			int sc1=setpointattrib(0,"Cd",pl,{0.1,0,0.1},"set");
 			int pr = addpoint(0,locR);
+			int sc2=setpointattrib(0,"Cd",pr,{0.1,0,0.1},"set");
 	
 			vector upUV = set(
 				thisUV[0],
@@ -549,27 +587,17 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 }//end bracket for all primitives.
 
 
-
-
-
-printf("originalJunctions: %f\\n",		originalJunctions);
-printf("pointsTooClose: %f\\n",				pointsTooClose);
-printf("pointlessPrims: %f\\n",				pointlessPrims);
-printf("specialIntersections: %f\\n",	specialIntersections);
-printf("sharesSimple: %f\\n",					sharesSimple);
-printf("sharePrims: %f\\n",						sharePrims);
-printf("shareDirection: %f\\n",				shareDirection);
-printf("firstValidPoint: %f\\n",			firstValidPoint);
-printf("V_shareLoc: %f\\n",						V_shareLoc);
-printf("offsets: %f\\n",							offsets);
-printf("pointleafleaf: %f\\n",				pointleafleaf);
-
-//Create the Junctions.
-
-
-
-
-
+//printf("originalJunctions: %f\\n",		originalJunctions);
+//printf("pointsTooClose: %f\\n",				pointsTooClose);
+//printf("pointlessPrims: %f\\n",				pointlessPrims);
+//printf("specialIntersections: %f\\n",	specialIntersections);
+//printf("sharesSimple: %f\\n",					sharesSimple);
+//printf("sharePrims: %f\\n",						sharePrims);
+//printf("shareDirection: %f\\n",				shareDirection);
+//printf("firstValidPoint: %f\\n",			firstValidPoint);
+//printf("V_shareLoc: %f\\n",						V_shareLoc);
+//printf("offsets: %f\\n",							offsets);
+//printf("pointleafleaf: %f\\n",				pointleafleaf);
 
 //INGREDIENTS:
 //originalJunctions[];
@@ -583,3 +611,37 @@ printf("pointleafleaf: %f\\n",				pointleafleaf);
 //V_shareLoc[];
 //offsets[];
 //pointleafleaf[];
+
+
+//Create the Junctions.
+foreach(int index; string junction; firstValidPoint){
+	vector centroid = V_shareLoc[index];
+	string S_connectionPoints[] = split(junction,",");
+	int I_connectionPoints[]; 		 foreach(string j; S_connectionPoints){push(I_connectionPoints,atoi(j));}
+	vector V_connectionLocation[]; foreach (int cp;I_connectionPoints){vector loc = point(0,"P",cp); push(V_connectionLocation,loc);}
+
+	//draw an angle to each connection.
+	drawAngle(centroid+{0,-.01,0},radius, 0.0, {1.0,2.0,0});
+
+	float allAngles[];
+	foreach(vector v; V_connectionLocation){
+		float dx = centroid[0]-v[0];
+		float dz = centroid[2]-v[2];
+		float thisAngle = atan2(dz,dx);
+		drawAngle(v+{0,-.01,0},0.15,thisAngle,{0,3,0});
+		push(allAngles,thisAngle);
+	}
+	vector bisectors[]; //find angles between angles.
+	for(int biterator=-1;biterator<len(allAngles)-1;biterator++){
+		//float angleBisector = clampAngle(allAngles[biterator]+allAngles[biterator+1]/2);
+		float angleBisector = (allAngles[biterator]+allAngles[biterator+1])/2;
+		vector bLoc = set(centroid[0]+radius*cos(angleBisector),0,centroid[2]+radius*sin(angleBisector));
+		drawAngle(bLoc,0.1,angleBisector,{0,1,1});
+	}
+
+
+
+
+}
+
+
