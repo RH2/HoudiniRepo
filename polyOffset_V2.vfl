@@ -625,20 +625,61 @@ foreach(int index; string junction; firstValidPoint){
 
 	float allAngles[];
 	foreach(vector v; V_connectionLocation){
-		float dx = centroid[0]-v[0];
-		float dz = centroid[2]-v[2];
+		float dx = v[0]-centroid[0];
+		float dz = v[2]-centroid[2];
 		float thisAngle = atan2(dz,dx);
-		drawAngle(v+{0,-.01,0},0.15,thisAngle,{0,3,0});
+		drawAngle(v+{0,-.01,0},0.15,thisAngle,{0,0.2,0.5});
 		push(allAngles,thisAngle);
 	}
-	vector bisectors[]; //find angles between angles.
-	for(int biterator=-1;biterator<len(allAngles)-1;biterator++){
-		//float angleBisector = clampAngle(allAngles[biterator]+allAngles[biterator+1]/2);
-		float angleBisector = (allAngles[biterator]+allAngles[biterator+1])/2;
-		vector bLoc = set(centroid[0]+radius*cos(angleBisector),0,centroid[2]+radius*sin(angleBisector));
-		drawAngle(bLoc,0.1,angleBisector,{0,1,1});
-	}
+	//sort the angles.
+	int angsort[] = argsort(allAngles);
+	float sortang[] = reorder(allAngles,angsort); 
+	int sortcon[] = reorder(I_connectionPoints,angsort);
+	printf("angsort: %f\\n",angsort);
+	printf("sortang: %f\\n",sortang);
+	printf("sortcon: %f\\n",sortcon);
+	//printf("sortcon+1: %f",sortcon[-1]);//first item in sortcon?
+	for(int b=0;b<len(sortang);b++){ //bisctor time!
 
+		//FIND COUNTER-CLOCKWISE ANGULAR DISTANCE
+		vector angcolor = {0,1,.2};
+		float thisang = sortang[b];
+		float lastang = sortang[b-1];
+		float tau_thisang = thisang; 
+		float tau_lastang = lastang;
+		if(tau_thisang<0){tau_lastang+pi*2;}
+		if(tau_lastang<0){tau_lastang+pi*2;}
+;
+		float difang = (tau_thisang - tau_lastang) /2;
+		float newang = clampAngle(difang);
+
+		printf("°A: %f,\\t°B: %f,\\t°d: %f\\n",tau_thisang*180/pi,tau_lastang*180/pi,difang*180/pi);
+		drawAngle(centroid+set((b+1)/2,0.1,0),0.15,tau_thisang*180/pi,{1,0,0});
+		drawAngle(centroid+set((b+1)/2,0.1,0),0.15,tau_lastang*180/pi,{0,1,0});
+		drawAngle(centroid+set((b+1)/2,0.1,0),0.15,difang*180/pi,{0,0.2,2});
+
+		//float angleDelta = thisang-lastang;
+		//float newang= clampAngle(thisang+angleDelta/2); //average the angles
+		drawAngle(centroid+{0,-.01,0},0.85,newang,angcolor);
+
+
+
+		//float prevAngle= sortang[b-1];
+		//float nextAngle= sortang[b];
+		//float Sigx = cos(prevAngle)+cos(nextAngle);//Total x
+		//float Sigy = sin(prevAngle)+sin(nextAngle);//Total y
+		//float bisectAngle = atan2(Sigy,Sigx);
+		//printf("bisection: %f\\n",bisectAngle);
+		//int isleft = 0;
+		//vector angcolor = {1,0,0};
+		//vector thisPosition= point(0,"P",sortcon[b]);
+		////sideCheckXZ(vector s; vector e; vector p) +==left
+		//float sideResult = sideCheckXZ(thisPosition,centroid,centroid+set(centroid+Sigx,0,centroid+Sigy));
+		//if(sideResult>0){isleft=1;angcolor={0,1,0};bisectAngle=clampAngle(bisectAngle+pi);}
+		//drawAngle(centroid+{0,-.01,0},0.85,bisectAngle,angcolor);
+
+
+	}
 
 
 

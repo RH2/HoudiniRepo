@@ -22,9 +22,9 @@ dimX=126
 dimY=126
 dimZ=126
 myGeo =  hou.node('/obj/geo1/ptcld_mat').geometry()
-for pnt in myGeo.points()
-	loc = pnt.pointFloatAttribValues('P')
-	mat = pnt.pointFloatAttribValues('mat')
+for pnt in myGeo.points():
+	loc = pnt.attribValue('P')
+	mat = pnt.attribValue('mat')
 	outputVoxels+=pack("4B",int(loc[0]),int(loc[1]),int(loc[2]),int(mat))
 #for x in xrange(0,dimX):
 #	for y in xrange(0,dimY):
