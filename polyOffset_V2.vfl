@@ -642,47 +642,16 @@ foreach(int index; string junction; firstValidPoint){
 	for(int b=0;b<len(sortang);b++){ //bisctor time!
 
 		//FIND COUNTER-CLOCKWISE ANGULAR DISTANCE
-		vector angcolor = {0,1,.2};
+		vector angcolor = set(b*0.3,0.2+b*0.3,0.2);
 		float thisang = sortang[b];
 		float lastang = sortang[b-1];
-		float tau_thisang = thisang; 
-		float tau_lastang = lastang;
-		if(tau_thisang<0){tau_lastang+pi*2;}
-		if(tau_lastang<0){tau_lastang+pi*2;}
-;
-		float difang = (tau_thisang - tau_lastang) /2;
-		float newang = clampAngle(difang);
-
-		printf("°A: %f,\\t°B: %f,\\t°d: %f\\n",tau_thisang*180/pi,tau_lastang*180/pi,difang*180/pi);
-		drawAngle(centroid+set((b+1)/2,0.1,0),0.15,tau_thisang*180/pi,{1,0,0});
-		drawAngle(centroid+set((b+1)/2,0.1,0),0.15,tau_lastang*180/pi,{0,1,0});
-		drawAngle(centroid+set((b+1)/2,0.1,0),0.15,difang*180/pi,{0,0.2,2});
-
-		//float angleDelta = thisang-lastang;
-		//float newang= clampAngle(thisang+angleDelta/2); //average the angles
-		drawAngle(centroid+{0,-.01,0},0.85,newang,angcolor);
-
-
-
-		//float prevAngle= sortang[b-1];
-		//float nextAngle= sortang[b];
-		//float Sigx = cos(prevAngle)+cos(nextAngle);//Total x
-		//float Sigy = sin(prevAngle)+sin(nextAngle);//Total y
-		//float bisectAngle = atan2(Sigy,Sigx);
-		//printf("bisection: %f\\n",bisectAngle);
-		//int isleft = 0;
-		//vector angcolor = {1,0,0};
-		//vector thisPosition= point(0,"P",sortcon[b]);
-		////sideCheckXZ(vector s; vector e; vector p) +==left
-		//float sideResult = sideCheckXZ(thisPosition,centroid,centroid+set(centroid+Sigx,0,centroid+Sigy));
-		//if(sideResult>0){isleft=1;angcolor={0,1,0};bisectAngle=clampAngle(bisectAngle+pi);}
-		//drawAngle(centroid+{0,-.01,0},0.85,bisectAngle,angcolor);
-
-
+		if(thisang<lastang){ //make sure angle space wraps for comparison.
+			thisang+=(2*pi);
+		}
+		// P + (C-P/2) <<< P"previous" C"current"
+		float middle = lastang + (thisang-lastang)/2;
+		drawAngle(centroid+{0,-.01,0},0.85,middle,angcolor);
 	}
-
-
-
 }
 
 
