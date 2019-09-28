@@ -93,7 +93,7 @@
 
 
 //constants
-	float diameter = 1.1;
+	float diameter = .7;
 	float radius = diameter/2;
 	float pi = 3.14159264;
 	float tau = 3.14159264*2;
@@ -422,7 +422,8 @@ for(int k=0; k<len(sharePrims);k++){
 
 		float od = distance(thisLoc,originalLoc); 
 		float nd = distance(thisLoc,newLoc);
-		float dd = nd-od;
+		//float dd = nd-od;
+		float dd = nd; //all that matters is new distance!
 
 		string dd_stringified = ftoa(dd);
 		offsetCollection += dd_stringified+",";
@@ -436,7 +437,7 @@ for(int k=0; k<len(sharePrims);k++){
 
 //SWEEP --LETS DO THIS.
 int pointleafleaf[]; //each prim contains 6 entries. start,leaf,leaf,end,leaf,leaf.
-vector V_pUV[]; //store uv of each center. 
+vector V_pUV[]; //each prim contains 2 entries: uvstart,uvend
 int startingPrimCount = nprimitives(0);
 for(int sweep=0; sweep<startingPrimCount;sweep++){
 	if(find(pointlessPrims,sweep)<0){//if prim is not pointless.
@@ -527,9 +528,9 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 				thisLocation[2]+radius*sin(p90));
 
 			int pl = addpoint(0,locL);
-			int sc1=setpointattrib(0,"Cd",pl,{0.1,0,0.1},"set");
+			//int sc1=setpointattrib(0,"Cd",pl,{0.1,0,0.1},"set");
 			int pr = addpoint(0,locR);
-			int sc2=setpointattrib(0,"Cd",pr,{0.1,0,0.1},"set");
+			//int sc2=setpointattrib(0,"Cd",pr,{0.1,0,0.1},"set");
 	
 			vector upUV = set(
 				thisUV[0],
@@ -546,13 +547,14 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 				push(pointleafleaf,thispoint); //pointleafleaf defined on line 349.
 				push(pointleafleaf,pl);
 				push(pointleafleaf,pr);
+				push(V_pUV,thisUV);//store first uv
 			}
 			if(pointIterator==len(notremoved)-1){//is last
 				push(pointleafleaf,thispoint);
 				push(pointleafleaf,pl);
 				push(pointleafleaf,pr);
+				push(V_pUV,thisUV); //store last uv
 			}
-			push(V_pUV,thisUV);
 	
 			if(lastCenter!=-1){//if we have processed a set already, now we can begin connecting trios.
 				int pass;
@@ -600,6 +602,7 @@ printf("firstValidPoint: %f\\n",			firstValidPoint);
 printf("V_shareLoc: %f\\n",						V_shareLoc);
 printf("offsets: %f\\n",							offsets);
 printf("pointleafleaf: %f\\n",				pointleafleaf);
+printf("V_pUV: %f\\n",								V_pUV);
 
 //INGREDIENTS:
 //originalJunctions[];
@@ -613,6 +616,13 @@ printf("pointleafleaf: %f\\n",				pointleafleaf);
 //V_shareLoc[];
 //offsets[];
 //pointleafleaf[];
+
+//remove pointless
+for(int index=0; index<npoints(0);index++){
+	if(find(pointsTooClose,index)>-1){
+		removepoint(0,index);
+	}
+}
 
 
 //Create the Junctions.
@@ -642,6 +652,7 @@ foreach(int index; string junction; firstValidPoint){
 	}
 	//sort the angles.
 	int angsort[] = argsort(allAngles);
+	float sortall[] = reorder(allAngles,angsort);
 	float sortang[] = reorder(allAngles,angsort); 
 	int sortcon[] = reorder(I_connectionPoints,angsort);
 	int sortdir[] = reorder(I_dir,angsort);
@@ -669,6 +680,7 @@ foreach(int index; string junction; firstValidPoint){
 	//now let's create something.
 	//for each connection we have two bisectors, two leaf, and a centroid to skin.
 	foreach (int branch;int con; sortcon){
+		float centang = sortall[branch];//sortall is all storted angles (to original (con)nection)
 		float thisoff = sortoff[branch];
 		int thisdir = sortdir[branch];
 		float f_bisectorleftangle=	ccbisectors[branch];
@@ -676,6 +688,7 @@ foreach(int index; string junction; firstValidPoint){
 		int pbisectLeft=	addpoint(0,set(centroid[0]+radius*cos(f_bisectorleftangle),centroid[1],centroid[2]+radius*sin(f_bisectorleftangle)));
 		int pbisectRight=	addpoint(0,set(centroid[0]+radius*cos(f_bisectorrightangle),centroid[1],centroid[2]+radius*sin(f_bisectorrightangle))); 
 		int pcenter = addpoint(0,centroid);
+		int pcenter2 = addpoint(0,set(centroid[0]+radius*cos(centang),centroid[1],centroid[2]+radius*sin(centang)));
 
 		int connectionIndex = find(pointleafleaf,con);
 		int leafa;
@@ -689,50 +702,68 @@ foreach(int index; string junction; firstValidPoint){
 		}
 
 
-		//con
-		//leafa
-		//leafb
-		//pbisectLeft
-		//pbisectRight
-		//centroid location.
 
-		//original uv position.
-		//vector originalUV = V_pUV[connectionIndex/3];
-		//printf("oUV: %f", originalUV);
+		//printf("uvindex: %f\\n",connectionIndex/3);
+		vector originalUV = V_pUV[int(connectionIndex/3)];  //		printf("index: %f, uvindex; %f",connectionIndex, connectionIndex/3); printf("oUV: %f", originalUV);
+		float u = originalUV[0];
+		vector offsetUV; 
+		vector offsetUV2; 
+		thisoff=thisoff*1;
+		if(thisdir==0){//this is a source and offset is negative
+			offsetUV= set(u+thisoff,0.5,0); 
+			offsetUV2= set(u-abs(thisoff-radius),0.5,0);
+		}else{//this is outflow and offset is positive
+			offsetUV= set(u-thisoff,0.5,0); 
+			offsetUV2= set(u+abs(thisoff+radius),0.5,0);
+		}
+		//printf(">>>>>\toffUV: %f\\n",offsetUV);
+		//printf("thisoff: %f\\n",thisoff);
+		vector uv_center = set(offsetUV[0],0.5);
+		vector uv_center2 = set(offsetUV2[0],0.5);
+		vector uv_con = set(originalUV[0],0.5);
+		vector uv_leftbisect = set(offsetUV2[0],0.0);
+		vector uv_rightbisect = set(offsetUV2[0],1.0);
+		vector uv_leafL = set(originalUV[0],0.0);
+		vector uv_leafR = set(originalUV[0],1.0);
+
+		int uvpass;
+		//second attempt at generating geo.
+			//left tri:
+			int ltri = addprim(0,"poly");
+				int lt1 = addvertex(0,ltri,pcenter);
+				int lt2 = addvertex(0,ltri,pcenter2);
+				int lt3= addvertex(0,ltri,pbisectLeft);
+					uvpass= setvertexattrib(0,"uv",-1,lt1,uv_center,"set");
+					uvpass= setvertexattrib(0,"uv",-1,lt2,uv_center2,"set");
+					uvpass= setvertexattrib(0,"uv",-1,lt3,uv_leftbisect,"set");
+
+			int rtri = addprim(0,"poly");
+				int rt1 = addvertex(0,rtri,pcenter2);
+				int rt2 = addvertex(0,rtri,pcenter);
+				int rt3= addvertex(0,rtri,pbisectRight);
+					uvpass= setvertexattrib(0,"uv",-1,rt1,uv_center2,"set");
+					uvpass= setvertexattrib(0,"uv",-1,rt2,uv_center,"set");
+					uvpass= setvertexattrib(0,"uv",-1,rt3,uv_rightbisect,"set");
+
+			int lquad = addprim(0,"poly");
+				int lq1 = addvertex(0,lquad,pcenter2);
+				int lq2 = addvertex(0,lquad,con);
+				int lq3 = addvertex(0,lquad,leafb);
+				int lq4 = addvertex(0,lquad,pbisectLeft);
+					uvpass= setvertexattrib(0,"uv",-1,lq1,uv_center2,"set");
+					uvpass= setvertexattrib(0,"uv",-1,lq2,uv_con,"set");
+					uvpass= setvertexattrib(0,"uv",-1,lq3,uv_leafL,"set");
+					uvpass= setvertexattrib(0,"uv",-1,lq4,uv_leftbisect,"set");
 
 
-
-		//add left quad.
-		int pass;
-		int lquad = addprim(0,'poly');
-		int v1 = addvertex(0,lquad, con);
-			//pass= setvertexattrib(0,"uv",-1,v1,originalUV,"set");
-		int v2 = addvertex(0,lquad, pcenter);
-			//pass= setvertexattrib(0,"uv",-1,v2,originalUV,"set");
-		int v3 = addvertex(0,lquad, pbisectLeft);
-			//pass= setvertexattrib(0,"uv",-1,v3,originalUV,"set");
-		int v4 = addvertex(0,lquad, leafb);
-			//pass= setvertexattrib(0,"uv",-1,v4,originalUV,"set");
-
-		//pass= setvertexattrib(0,"uv",-1,v1,UV_lastLeft,"set");
-
-
-		//add right quad.
-		int rquad = addprim(0,'poly');
-		int v5 = addvertex(0,rquad, leafa);
-		int v6 = addvertex(0,rquad, pbisectRight);
-		int v7 = addvertex(0,rquad, pcenter);
-		int v8 = addvertex(0,rquad, con);
-		//pass= setvertexattrib(0,"uv",-1,v1,UV_lastLeft,"set");
-
-
-
-
-	    
+			int rquad = addprim(0,"poly");
+				int rq1 = addvertex(0,rquad,con);
+				int rq2 = addvertex(0,rquad,pcenter2);
+				int rq3 = addvertex(0,rquad,pbisectRight);
+				int rq4 = addvertex(0,rquad,leafa);
+					uvpass= setvertexattrib(0,"uv",-1,rq1,uv_con,"set");
+					uvpass= setvertexattrib(0,"uv",-1,rq2,uv_center2,"set");
+					uvpass= setvertexattrib(0,"uv",-1,rq3,uv_rightbisect,"set");
+					uvpass= setvertexattrib(0,"uv",-1,rq4,uv_leafR,"set");
 	}
-
-
-
 }
-
-
