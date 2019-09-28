@@ -394,7 +394,6 @@ foreach(string oneSimpleShare; sharesSimple){
 //get beginning or end based on direction
 //calculate location difference as float offset.
 //store floats in a string array.
-
 string offsets[]; // uv offset for first valid point.
 for(int k=0; k<len(sharePrims);k++){
 	string offsetCollection = ",";
@@ -590,7 +589,6 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 	}//end bracket if not pointless.
 }//end bracket for all primitives.
 
-
 printf("originalJunctions: %f\\n",		originalJunctions);
 printf("pointsTooClose: %f\\n",				pointsTooClose);
 printf("pointlessPrims: %f\\n",				pointlessPrims);
@@ -602,7 +600,7 @@ printf("firstValidPoint: %f\\n",			firstValidPoint);
 printf("V_shareLoc: %f\\n",						V_shareLoc);
 printf("offsets: %f\\n",							offsets);
 printf("pointleafleaf: %f\\n",				pointleafleaf);
-printf("V_pUV: %f\\n",								V_pUV);
+//printf("V_pUV: %f\\n",								V_pUV);
 
 //INGREDIENTS:
 //originalJunctions[];
@@ -623,7 +621,6 @@ for(int index=0; index<npoints(0);index++){
 		removepoint(0,index);
 	}
 }
-
 
 //Create the Junctions.
 foreach(int index; string junction; firstValidPoint){
@@ -701,34 +698,38 @@ foreach(int index; string junction; firstValidPoint){
 			leafb = pointleafleaf[connectionIndex+1];
 		}
 
-
-
-		//printf("uvindex: %f\\n",connectionIndex/3);
-		vector originalUV = V_pUV[int(connectionIndex/3)];  //		printf("index: %f, uvindex; %f",connectionIndex, connectionIndex/3); printf("oUV: %f", originalUV);
+		vector originalUV = V_pUV[int(connectionIndex/3)];
 		float u = originalUV[0];
 		vector offsetUV; 
 		vector offsetUV2; 
 		thisoff=thisoff*1;
 		if(thisdir==0){//this is a source and offset is negative
 			offsetUV= set(u+thisoff,0.5,0); 
-			offsetUV2= set(u-abs(thisoff-radius),0.5,0);
+			offsetUV2= set(u+thisoff-radius,0.5,0);
 		}else{//this is outflow and offset is positive
 			offsetUV= set(u-thisoff,0.5,0); 
-			offsetUV2= set(u+abs(thisoff+radius),0.5,0);
+			offsetUV2= set(u-thisoff+radius,0.5,0);
 		}
-		//printf(">>>>>\toffUV: %f\\n",offsetUV);
-		//printf("thisoff: %f\\n",thisoff);
 		vector uv_center = set(offsetUV[0],0.5);
 		vector uv_center2 = set(offsetUV2[0],0.5);
 		vector uv_con = set(originalUV[0],0.5);
-		vector uv_leftbisect = set(offsetUV2[0],0.0);
-		vector uv_rightbisect = set(offsetUV2[0],1.0);
-		vector uv_leafL = set(originalUV[0],0.0);
-		vector uv_leafR = set(originalUV[0],1.0);
+		vector uv_leftbisect; 
+		vector uv_rightbisect;
+		vector uv_leafL;
+		vector uv_leafR;
+		if(thisdir==0){
+			uv_leftbisect = set(offsetUV2[0],0.0);
+			uv_rightbisect = set(offsetUV2[0],1.0);
+			uv_leafL = set(originalUV[0],0.0);
+			uv_leafR = set(originalUV[0],1.0);
+		}else{
+			uv_leftbisect = set(offsetUV2[0],1.0);
+			uv_rightbisect = set(offsetUV2[0],0.0);
+			uv_leafL = set(originalUV[0],1.0);
+			uv_leafR = set(originalUV[0],0.0);
+		}
 
 		int uvpass;
-		//second attempt at generating geo.
-			//left tri:
 			int ltri = addprim(0,"poly");
 				int lt1 = addvertex(0,ltri,pcenter);
 				int lt2 = addvertex(0,ltri,pcenter2);
@@ -754,7 +755,6 @@ foreach(int index; string junction; firstValidPoint){
 					uvpass= setvertexattrib(0,"uv",-1,lq2,uv_con,"set");
 					uvpass= setvertexattrib(0,"uv",-1,lq3,uv_leafL,"set");
 					uvpass= setvertexattrib(0,"uv",-1,lq4,uv_leftbisect,"set");
-
 
 			int rquad = addprim(0,"poly");
 				int rq1 = addvertex(0,rquad,con);
