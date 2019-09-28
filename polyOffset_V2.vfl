@@ -436,6 +436,7 @@ for(int k=0; k<len(sharePrims);k++){
 
 //SWEEP --LETS DO THIS.
 int pointleafleaf[]; //each prim contains 6 entries. start,leaf,leaf,end,leaf,leaf.
+vector V_pUV[]; //store uv of each center. 
 int startingPrimCount = nprimitives(0);
 for(int sweep=0; sweep<startingPrimCount;sweep++){
 	if(find(pointlessPrims,sweep)<0){//if prim is not pointless.
@@ -551,6 +552,7 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 				push(pointleafleaf,pl);
 				push(pointleafleaf,pr);
 			}
+			push(V_pUV,thisUV);
 	
 			if(lastCenter!=-1){//if we have processed a set already, now we can begin connecting trios.
 				int pass;
@@ -587,17 +589,17 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 }//end bracket for all primitives.
 
 
-//printf("originalJunctions: %f\\n",		originalJunctions);
-//printf("pointsTooClose: %f\\n",				pointsTooClose);
-//printf("pointlessPrims: %f\\n",				pointlessPrims);
-//printf("specialIntersections: %f\\n",	specialIntersections);
-//printf("sharesSimple: %f\\n",					sharesSimple);
-//printf("sharePrims: %f\\n",						sharePrims);
-//printf("shareDirection: %f\\n",				shareDirection);
-//printf("firstValidPoint: %f\\n",			firstValidPoint);
-//printf("V_shareLoc: %f\\n",						V_shareLoc);
-//printf("offsets: %f\\n",							offsets);
-//printf("pointleafleaf: %f\\n",				pointleafleaf);
+printf("originalJunctions: %f\\n",		originalJunctions);
+printf("pointsTooClose: %f\\n",				pointsTooClose);
+printf("pointlessPrims: %f\\n",				pointlessPrims);
+printf("specialIntersections: %f\\n",	specialIntersections);
+printf("sharesSimple: %f\\n",					sharesSimple);
+printf("sharePrims: %f\\n",						sharePrims);
+printf("shareDirection: %f\\n",				shareDirection);
+printf("firstValidPoint: %f\\n",			firstValidPoint);
+printf("V_shareLoc: %f\\n",						V_shareLoc);
+printf("offsets: %f\\n",							offsets);
+printf("pointleafleaf: %f\\n",				pointleafleaf);
 
 //INGREDIENTS:
 //originalJunctions[];
@@ -620,29 +622,39 @@ foreach(int index; string junction; firstValidPoint){
 	int I_connectionPoints[]; 		 foreach(string j; S_connectionPoints){push(I_connectionPoints,atoi(j));}
 	vector V_connectionLocation[]; foreach (int cp;I_connectionPoints){vector loc = point(0,"P",cp); push(V_connectionLocation,loc);}
 
+	//create integer arrays of direction and offset.
+	string S_dir = shareDirection[index];
+	int I_dir[]; foreach(string singleDir;split(S_dir,",")){push(I_dir,atoi(singleDir));}
+	string S_off = offsets[index];
+	float F_offsets[]; foreach(string singleOffset; split(S_off,",") ){push(F_offsets, atof(singleOffset));}
+
+
 	//draw an angle to each connection.
-	drawAngle(centroid+{0,-.01,0},radius, 0.0, {1.0,2.0,0});
+	//drawAngle(centroid+{0,-.01,0},radius, 0.0, {1.0,2.0,0});
 
 	float allAngles[];
 	foreach(vector v; V_connectionLocation){
 		float dx = v[0]-centroid[0];
 		float dz = v[2]-centroid[2];
 		float thisAngle = atan2(dz,dx);
-		drawAngle(v+{0,-.01,0},0.15,thisAngle,{0,0.2,0.5});
+		//drawAngle(v+{0,-.01,0},0.15,thisAngle,{0,0.2,0.5});
 		push(allAngles,thisAngle);
 	}
 	//sort the angles.
 	int angsort[] = argsort(allAngles);
 	float sortang[] = reorder(allAngles,angsort); 
 	int sortcon[] = reorder(I_connectionPoints,angsort);
-	printf("angsort: %f\\n",angsort);
-	printf("sortang: %f\\n",sortang);
-	printf("sortcon: %f\\n",sortcon);
+	int sortdir[] = reorder(I_dir,angsort);
+	float sortoff[] = reorder(F_offsets,angsort);
+	//printf("angsort: %f\\n",angsort);
+	//printf("sortang: %f\\n",sortang);
+	//printf("sortcon: %f\\n",sortcon);
 	//printf("sortcon+1: %f",sortcon[-1]);//first item in sortcon?
+	float ccbisectors[];
 	for(int b=0;b<len(sortang);b++){ //bisctor time!
 
 		//FIND COUNTER-CLOCKWISE ANGULAR DISTANCE
-		vector angcolor = set(b*0.3,0.2+b*0.3,0.2);
+		vector angcolor = hsvtorgb((b*0.1)%1.0, 1.0, 1.0);
 		float thisang = sortang[b];
 		float lastang = sortang[b-1];
 		if(thisang<lastang){ //make sure angle space wraps for comparison.
@@ -650,8 +662,77 @@ foreach(int index; string junction; firstValidPoint){
 		}
 		// P + (C-P/2) <<< P"previous" C"current"
 		float middle = lastang + (thisang-lastang)/2;
-		drawAngle(centroid+{0,-.01,0},0.85,middle,angcolor);
+		push(ccbisectors,middle);
+		//drawAngle(centroid+{0,-.01,0},0.85,middle,angcolor);
 	}
+
+	//now let's create something.
+	//for each connection we have two bisectors, two leaf, and a centroid to skin.
+	foreach (int branch;int con; sortcon){
+		float thisoff = sortoff[branch];
+		int thisdir = sortdir[branch];
+		float f_bisectorleftangle=	ccbisectors[branch];
+		float f_bisectorrightangle=	ccbisectors[(branch+1)%len(ccbisectors)];
+		int pbisectLeft=	addpoint(0,set(centroid[0]+radius*cos(f_bisectorleftangle),centroid[1],centroid[2]+radius*sin(f_bisectorleftangle)));
+		int pbisectRight=	addpoint(0,set(centroid[0]+radius*cos(f_bisectorrightangle),centroid[1],centroid[2]+radius*sin(f_bisectorrightangle))); 
+		int pcenter = addpoint(0,centroid);
+
+		int connectionIndex = find(pointleafleaf,con);
+		int leafa;
+		int leafb;
+		if(thisdir==0){
+			leafa = pointleafleaf[connectionIndex+1];
+			leafb = pointleafleaf[connectionIndex+2];
+		}else{
+			leafa = pointleafleaf[connectionIndex+2];
+			leafb = pointleafleaf[connectionIndex+1];
+		}
+
+
+		//con
+		//leafa
+		//leafb
+		//pbisectLeft
+		//pbisectRight
+		//centroid location.
+
+		//original uv position.
+		//vector originalUV = V_pUV[connectionIndex/3];
+		//printf("oUV: %f", originalUV);
+
+
+
+		//add left quad.
+		int pass;
+		int lquad = addprim(0,'poly');
+		int v1 = addvertex(0,lquad, con);
+			//pass= setvertexattrib(0,"uv",-1,v1,originalUV,"set");
+		int v2 = addvertex(0,lquad, pcenter);
+			//pass= setvertexattrib(0,"uv",-1,v2,originalUV,"set");
+		int v3 = addvertex(0,lquad, pbisectLeft);
+			//pass= setvertexattrib(0,"uv",-1,v3,originalUV,"set");
+		int v4 = addvertex(0,lquad, leafb);
+			//pass= setvertexattrib(0,"uv",-1,v4,originalUV,"set");
+
+		//pass= setvertexattrib(0,"uv",-1,v1,UV_lastLeft,"set");
+
+
+		//add right quad.
+		int rquad = addprim(0,'poly');
+		int v5 = addvertex(0,rquad, leafa);
+		int v6 = addvertex(0,rquad, pbisectRight);
+		int v7 = addvertex(0,rquad, pcenter);
+		int v8 = addvertex(0,rquad, con);
+		//pass= setvertexattrib(0,"uv",-1,v1,UV_lastLeft,"set");
+
+
+
+
+	    
+	}
+
+
+
 }
 
 
