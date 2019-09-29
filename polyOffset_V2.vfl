@@ -93,10 +93,21 @@
 
 
 //constants
-	float diameter = .7;
+	float diameter = .3;
 	float radius = diameter/2;
 	float pi = 3.14159264;
 	float tau = 3.14159264*2;
+
+
+int loops[];
+for(int loopcandidate=0;loopcandidate<nprimitives(0);loopcandidate++){//find all cyclic curves.
+	int loopPoints[] = primpoints(0,loopcandidate);//get all points
+	int firstNs[] = neighbours(0,loopPoints[0]);
+	if(find(firstNs,loopPoints[0] && len(firstNs)<3 )){	
+		push(loops,loopcandidate);
+	}
+}
+printf("loops: %f\\n",loops);
 
 
 int originalJunctions[];
@@ -434,6 +445,71 @@ for(int k=0; k<len(sharePrims);k++){
 //offset junction happens when we expand the junction.
 
 
+
+//add simple junctions. updates: sharePrims, shareDirection, FirstValidPoint
+foreach(int original; originalJunctions){
+	if(find(specialIntersections,original)<0){ //if not part of a share, we need to append info.
+		string S_PRM = ",";
+		string S_DIR = ",";
+		string S_FVP = ",";
+		string S_OFF = ",";
+		vector V_avgloc;
+		int adj[];
+
+
+		//point prims
+		int edges[] = pointprims(0, original);
+		foreach(int e; edges){
+			int edgepoints[] = primpoints(0,e);
+			if(edgepoints[0]==original){//is original first?
+				S_DIR+="1,";
+				//walk from beginning
+				for(int a=0;a<len(edgepoints);a++){
+					if(find(pointsTooClose,edgepoints[a])<0){//if not too close record.
+						S_FVP+= itoa(edgepoints[a])+",";
+						push(adj,edgepoints[a]);
+						break;
+					}
+				}
+			}
+			else{//was last
+				S_DIR+="0,";
+				//walk from last
+				for(int a=len(edgepoints)-1;a>0;a--){
+					if(find(pointsTooClose,edgepoints[a])<0){//if not too close record.
+						S_FVP+= itoa(edgepoints[a])+",";
+						push(adj,edgepoints[a]);
+						break;
+					}
+				}
+			}
+		}
+
+		//average adjacencies (adj) points to obtain center. store that center location, and calculate offsets.
+		vector v_adjloc[];
+		vector v_averageLocation={0,0,0};
+		foreach(int adjpnt; adj){
+			vector ploc = point(0,"P",adjpnt);
+			push(v_adjloc, ploc);
+			v_averageLocation+=ploc;
+		}
+		v_averageLocation=v_averageLocation/len(adj);
+		push(V_shareLoc, v_averageLocation);
+
+		//calculate distances
+		foreach(vector pointlocation; v_adjloc){
+			S_OFF+=  ftoa(distance(v_averageLocation, pointlocation))+",";
+		}
+
+
+
+		push(sharePrims,S_PRM);
+		push(shareDirection,S_DIR);
+		push(firstValidPoint,S_FVP);
+		push(offsets, S_OFF);
+	}
+}
+
 //SWEEP --LETS DO THIS.
 int pointleafleaf[]; //each prim contains 6 entries. start,leaf,leaf,end,leaf,leaf.
 vector V_pUV[]; //each prim contains 2 entries: uvstart,uvend
@@ -447,15 +523,20 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 		//create list of points that are not too close.
 		int notremoved[];
 		int vert_notremoved[];
-
-
-
 		foreach(int index; int unfilteredpoint; allpoints){
 			if(find(pointsTooClose,unfilteredpoint)<0){
 				push(notremoved,unfilteredpoint);
 				push(vert_notremoved,allverts[index]);
 			}
 		}
+
+		int looping = 0;
+		if(find(loops,sweep)>-1){  //add beginning index to end of aray?
+			push(notremoved,notremoved[0]);
+			push(vert_notremoved,vert_notremoved[0]);
+			looping = 1;
+		}
+
 
 		float notRemovedAngles[];
 		//now we calculate the angles to accompany points that were not removed.
@@ -509,10 +590,29 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 		vector UV_lastCenter;
 		vector UV_lastRight;
 		vector UV_lastLeft;
+
 		for(int pointIterator = 0; pointIterator<len(notremoved);pointIterator++){
 			int   thispoint = notremoved[pointIterator];
 			float thisangle = notRemovedAngles[pointIterator];
 			vector thisUV = vertex(0,"uv",vert_notremoved[pointIterator]);
+			////////////////////////////////////////////////////////////////////////////////////////////////////////
+			if(looping==1){/////////////////////////////////////////////////////////////////////////////////////////
+				if(pointIterator==len(notremoved)-1){ //if last link
+					break;
+					int vert_prev =pointvertex(0,notremoved[1]);
+					int vert_next =pointvertex(0,notremoved[pointIterator-1]);
+
+					vector UV_NextLink = vertex(0,"P",vert_next);
+					vector UV_PreviousLink = vertex(0,"P",vert_prev);
+
+						//  this,next,.....,previous,
+						//  solution: previous + (next-this)
+					printf("prev:%f,this:%f,next:%f\\n",UV_PreviousLink,thisUV,UV_NextLink);
+					printf("V_prev:%f,V_this:%f,V_next:%f\\n",vert_notremoved[pointIterator-1],vert_notremoved[pointIterator],vert_notremoved[1]);
+					thisUV= set(UV_PreviousLink[0]+(UV_NextLink[0]-thisUV[0]),thisUV[1]);
+					thisUV= {500,500,0};
+				}
+			}
 			vector thisLocation = point(0,"P",thispoint);
 			float m90 = clampAngle(thisangle-pi/2);
 			float p90 = clampAngle(thisangle+pi/2);
@@ -558,62 +658,62 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 			if(lastCenter!=-1){//if we have processed a set already, now we can begin connecting trios.
 				int pass;
 				int leftface = addprim(0,'poly');
-				int v1 = addvertex(0,leftface, lastLeft);
-					pass= setvertexattrib(0,"uv",-1,v1,UV_lastLeft,"set");
-				int v2 = addvertex(0,leftface, lastCenter);
-					pass= setvertexattrib(0,"uv",-1,v2,UV_lastCenter,"set");
-				int v3 = addvertex(0,leftface, thispoint);
-					pass= setvertexattrib(0,"uv",-1,v3,thisUV,"set");
-				int v4 = addvertex(0,leftface, pl);					
-					pass= setvertexattrib(0,"uv",-1,v4,upUV,"set");
+					int v1 = addvertex(0,leftface, lastLeft);
+					int v2 = addvertex(0,leftface, lastCenter);
+					int v3 = addvertex(0,leftface, thispoint);
+					int v4 = addvertex(0,leftface, pl);					
+						pass= setvertexattrib(0,"uv",-1,v1,UV_lastLeft,"set");
+						pass= setvertexattrib(0,"uv",-1,v2,UV_lastCenter,"set");
+						pass= setvertexattrib(0,"uv",-1,v3,thisUV,"set");
+						pass= setvertexattrib(0,"uv",-1,v4,upUV,"set");
 				int rightface = addprim(0,'poly');
-				int v5 = addvertex(0,rightface, lastCenter);
-					pass= setvertexattrib(0,"uv",-1,v5,UV_lastCenter,"set");
-				int v6 = addvertex(0,rightface, lastRight);
-					pass= setvertexattrib(0,"uv",-1,v6,UV_lastRight,"set");
-				int v7 = addvertex(0,rightface, pr);					
-					pass= setvertexattrib(0,"uv",-1,v7,downUV,"set");
-				int v8 = addvertex(0,rightface, thispoint);
-					pass= setvertexattrib(0,"uv",-1,v8,thisUV,"set");
+					int v5 = addvertex(0,rightface, lastCenter);
+					int v6 = addvertex(0,rightface, lastRight);
+					int v7 = addvertex(0,rightface, pr);					
+					int v8 = addvertex(0,rightface, thispoint);
+						pass= setvertexattrib(0,"uv",-1,v5,UV_lastCenter,"set");
+						pass= setvertexattrib(0,"uv",-1,v6,UV_lastRight,"set");
+						pass= setvertexattrib(0,"uv",-1,v7,downUV,"set");
+						pass= setvertexattrib(0,"uv",-1,v8,thisUV,"set");
 			}
+
 			//update last.
 				lastCenter = thispoint;
 				lastRight = pr;
 				lastLeft = pl;
 				UV_lastCenter= thisUV; 
 				UV_lastLeft  = upUV;
-				UV_lastRight = downUV;
-			
+				UV_lastRight = downUV;	
 		}
-
 	}//end bracket if not pointless.
 }//end bracket for all primitives.
 
-printf("originalJunctions: %f\\n",		originalJunctions);
-printf("pointsTooClose: %f\\n",				pointsTooClose);
-printf("pointlessPrims: %f\\n",				pointlessPrims);
-printf("specialIntersections: %f\\n",	specialIntersections);
-printf("sharesSimple: %f\\n",					sharesSimple);
-printf("sharePrims: %f\\n",						sharePrims);
-printf("shareDirection: %f\\n",				shareDirection);
-printf("firstValidPoint: %f\\n",			firstValidPoint);
-printf("V_shareLoc: %f\\n",						V_shareLoc);
-printf("offsets: %f\\n",							offsets);
-printf("pointleafleaf: %f\\n",				pointleafleaf);
-//printf("V_pUV: %f\\n",								V_pUV);
-
-//INGREDIENTS:
-//originalJunctions[];
-//pointsTooClose[];
-//pointlessPrims[];
-//specialIntersections[];
-//sharesSimple[]
-//sharePrims[];
-//shareDirection[];
-//firstValidPoint[];
-//V_shareLoc[];
-//offsets[];
-//pointleafleaf[];
+//DEBUG SECTION: 
+	//printf("originalJunctions: %f\\n",		originalJunctions);
+	//printf("pointsTooClose: %f\\n",				pointsTooClose);
+	//printf("pointlessPrims: %f\\n",				pointlessPrims);
+	//printf("specialIntersections: %f\\n",	specialIntersections);
+	//printf("sharesSimple: %f\\n",					sharesSimple);
+	//printf("sharePrims: %f\\n",						sharePrims);
+	//printf("shareDirection: %f\\n",				shareDirection);
+	//printf("firstValidPoint: %f\\n",			firstValidPoint);
+	//printf("V_shareLoc: %f\\n",						V_shareLoc);
+	//printf("offsets: %f\\n",							offsets);
+	//printf("pointleafleaf: %f\\n",				pointleafleaf);
+	//printf("V_pUV: %f\\n",								V_pUV);
+	
+	//INGREDIENTS:
+	//originalJunctions[];
+	//pointsTooClose[];
+	//pointlessPrims[];
+	//specialIntersections[];
+	//sharesSimple[]
+	//sharePrims[];
+	//shareDirection[];
+	//firstValidPoint[];
+	//V_shareLoc[];
+	//offsets[];
+	//pointleafleaf[];
 
 //remove pointless
 for(int index=0; index<npoints(0);index++){
