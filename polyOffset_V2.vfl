@@ -93,7 +93,7 @@
 
 
 //constants
-	float diameter = .3;
+	float diameter = 1.2;
 	float radius = diameter/2;
 	float pi = 3.14159264;
 	float tau = 3.14159264*2;
@@ -405,6 +405,8 @@ foreach(string oneSimpleShare; sharesSimple){
 //get beginning or end based on direction
 //calculate location difference as float offset.
 //store floats in a string array.
+//offset source uv happens when we sweep the curve.
+//offset junction happens when we expand the junction.
 string offsets[]; // uv offset for first valid point.
 for(int k=0; k<len(sharePrims);k++){
 	string offsetCollection = ",";
@@ -440,11 +442,6 @@ for(int k=0; k<len(sharePrims);k++){
 	}
 	push(offsets,offsetCollection);
 }
-
-//offset source uv happens when we sweep the curve.
-//offset junction happens when we expand the junction.
-
-
 
 //add simple junctions. updates: sharePrims, shareDirection, FirstValidPoint
 foreach(int original; originalJunctions){
@@ -510,7 +507,15 @@ foreach(int original; originalJunctions){
 	}
 }
 
+
+
+
+
+
+
+//////////////////////
 //SWEEP --LETS DO THIS.
+
 int pointleafleaf[]; //each prim contains 6 entries. start,leaf,leaf,end,leaf,leaf.
 vector V_pUV[]; //each prim contains 2 entries: uvstart,uvend
 int startingPrimCount = nprimitives(0);
@@ -529,12 +534,13 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 				push(vert_notremoved,allverts[index]);
 			}
 		}
+		printf("not removed: %f",notremoved);
 
 		int looping = 0;
 		if(find(loops,sweep)>-1){  //add beginning index to end of aray?
-			push(notremoved,notremoved[0]);
-			push(vert_notremoved,vert_notremoved[0]);
 			looping = 1;
+			//push(notremoved,notremoved[0]);
+			//push(vert_notremoved,vert_notremoved[0]);
 		}
 
 
@@ -596,25 +602,35 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 			float thisangle = notRemovedAngles[pointIterator];
 			vector thisUV = vertex(0,"uv",vert_notremoved[pointIterator]);
 			////////////////////////////////////////////////////////////////////////////////////////////////////////
-			if(looping==1){/////////////////////////////////////////////////////////////////////////////////////////
-				if(pointIterator==len(notremoved)-1){ //if last link
-					break;
-					int vert_prev =pointvertex(0,notremoved[1]);
-					int vert_next =pointvertex(0,notremoved[pointIterator-1]);
+			//if(looping==1){/////////////////////////////////////////////////////////////////////////////////////////
+			//	if(pointIterator==len(notremoved)-1){ //if last link
+			//		break;
+			//		int vert_prev =pointvertex(0,notremoved[1]);
+			//		int vert_next =pointvertex(0,notremoved[pointIterator-1]);
+			//		vector UV_NextLink = vertex(0,"P",vert_next);
+			//		vector UV_PreviousLink = vertex(0,"P",vert_prev);
+			//			//  this,next,.....,previous,
+			//			//  solution: previous + (next-this)
+			//		printf("prev:%f,this:%f,next:%f\\n",UV_PreviousLink,thisUV,UV_NextLink);
+			//		printf("V_prev:%f,V_this:%f,V_next:%f\\n",vert_notremoved[pointIterator-1],vert_notremoved[pointIterator],vert_notremoved[1]);
+			//		thisUV= set(UV_PreviousLink[0]+(UV_NextLink[0]-thisUV[0]),thisUV[1]);
+			//		thisUV= {500,500,0};
+			//	}
+			//}
+			if(looping==1){
+				if(pointIterator==len(notremoved)-1){
+					//distance between this point and previous point.
+					vector lastpointloc = point(0,"P",lastCenter);
+					vector thispointloc = point(0,"P",thispoint);
 
-					vector UV_NextLink = vertex(0,"P",vert_next);
-					vector UV_PreviousLink = vertex(0,"P",vert_prev);
-
-						//  this,next,.....,previous,
-						//  solution: previous + (next-this)
-					printf("prev:%f,this:%f,next:%f\\n",UV_PreviousLink,thisUV,UV_NextLink);
-					printf("V_prev:%f,V_this:%f,V_next:%f\\n",vert_notremoved[pointIterator-1],vert_notremoved[pointIterator],vert_notremoved[1]);
-					thisUV= set(UV_PreviousLink[0]+(UV_NextLink[0]-thisUV[0]),thisUV[1]);
-					thisUV= {500,500,0};
+					float lastU = UV_lastCenter[0];
+					thisUV = set(lastU+distance(lastpointloc,thispointloc),0.5);
 				}
 			}
+
+
 			vector thisLocation = point(0,"P",thispoint);
-			float m90 = clampAngle(thisangle-pi/2);
+			float m90 = clampAngle(thisangle-pi/2);		//m90 and p90 are for calculating the position of the left and right points. 
 			float p90 = clampAngle(thisangle+pi/2);
 	
 			vector locL= set(
