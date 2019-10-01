@@ -107,7 +107,6 @@ for(int loopcandidate=0;loopcandidate<nprimitives(0);loopcandidate++){//find all
 		push(loops,loopcandidate);
 	}
 }
-printf("loops: %f\\n",loops);
 
 
 int originalJunctions[];
@@ -534,7 +533,6 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 				push(vert_notremoved,allverts[index]);
 			}
 		}
-		printf("not removed: %f",notremoved);
 
 		int looping = 0;
 		if(find(loops,sweep)>-1){  //add beginning index to end of aray?
