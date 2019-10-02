@@ -56,9 +56,9 @@ vector segsegXZ(float x1; float y1;float x2;float y2;float x3;float y3;float x4;
 }
 void drawAngle(vector position;float scale; float radians; vector color){
   //draw a circle with 10 points.
+  float pi = 3.141592;
   int circle = addprim(0,"polyline");
   float total = 36;
-  float pi = 3.141592;
   for(int points=0;points<total;points++){
         float fraction = points/total;
         int p = addpoint(0, set(position[0]+cos(fraction*2*pi)*scale ,position[1],position[2]+sin(fraction*2*pi)*scale));
@@ -90,6 +90,8 @@ void drawAngle(vector position;float scale; float radians; vector color){
 //vector intersection = segsegXZ(0.0,0.0,5.0,5.0,0.0,5.0,5.0,0.0);
 //drawAngle(intersection, 1.0,0.0,{1.0,0,1.0});
 
+
+float pi2 = 3.141592;
 int np0 = nprimitives(0);
 int np1 = nprimitives(1);
 
@@ -114,7 +116,34 @@ for(int ip0=0; ip0<np0;ip0++){    //ip0;each primitive in geo0
 
         vector collision = segsegXZ(position1[0],position1[2],position2[0],position2[2],position3[0],position3[2],position4[0],position4[2]);
         if(collision[1]>-1.0){
-          drawAngle(collision, 0.1,0.0,hsvtorgb(0.1,1,5));
+          drawAngle(collision, 0.1,0.0,hsvtorgb(0.2,1,5));
+          float res = 8;
+          for(float points=0;points<res;points++){
+            //printf("points:%f\\n",points);
+            float fraction = points/res;
+            float fraction2 = (points+1)/res;
+            float f_scale = 0.3;
+            vector circle_pointA = set(
+              collision[0]+cos(fraction*2.0*pi2)*f_scale,
+              0,
+              collision[2]+sin(fraction*2.0*pi2)*f_scale);
+            vector circle_pointB = set(
+              collision[0]+cos(fraction2*2.0*pi2)*f_scale,
+              0,
+              collision[2]+sin(fraction2*2.0*pi2)*f_scale);
+
+            //drawAngle(circle_pointA, 0.01,0.0,hsvtorgb(0.00,1,0.2));
+            //drawAngle(circle_pointB, 0.01,0.0,hsvtorgb(0.00,1,0.2));
+            //for current lake go through all points... again.
+            for(int secondaryCollisions = len(primpoints1)-1; secondaryCollisions>=0-close1; secondaryCollisions--){
+              vector position3b = point(1,"P",primpoints1[secondaryCollisions]);
+              vector position4b = point(1,"P",primpoints1[secondaryCollisions-1]);
+              vector collision2 = segsegXZ(circle_pointA[0],circle_pointA[2],circle_pointB[0],circle_pointB[2],position3b[0],position3b[2],position4b[0],position4b[2]);
+              if(collision2[1]>-1.0){
+                drawAngle(collision2, 0.02,0.0,hsvtorgb(0.05,1,2));
+              }
+            }
+          }
         }
       }
     }
