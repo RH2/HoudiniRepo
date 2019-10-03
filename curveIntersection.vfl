@@ -92,33 +92,42 @@ void drawAngle(vector position;float scale; float radians; vector color){
 
 
 float pi2 = 3.141592;
-int np0 = nprimitives(0);
-int np1 = nprimitives(1);
+int np0 = nprimitives(1);
+int np1 = nprimitives(2);
 
 //printf("np0:%f,np1:%f\\n",np0,np1);
-
 for(int ip0=0; ip0<np0;ip0++){    //ip0;each primitive in geo0
-  int primpoints0[] = primpoints(0,ip0);
-  int close0 =  primintrinsic(0, "closed", ip0);
+  int primpoints0[] = primpoints(1,ip0);
+  int close0 =  primintrinsic(1, "closed", ip0);
   //printf("primpoints0[]:%f\\n",primpoints0);
+
+  int    npIndex[];   //stores new point index to insert.
+  int    npLake[];    //stores lake integer
+  vector npLocation[];// store intersection location
+
+
   for(int ip1=0;ip1<np1;ip1++){   //ip1;each primitive in geo1
-    int primpoints1[] = primpoints(1,ip1);
-    int close1 =  primintrinsic(0, "closed", ip1);
-
+    int primpoints1[] = primpoints(2,ip1);
+    int close1 =  primintrinsic(2, "closed", ip1);
     //each edge in one (cpnt, npnt)0 vs (cpnt, npnt)1
-    for(int edgebuilder = len(primpoints0)-1; edgebuilder>0-close0;edgebuilder--){
-      vector position1 = point(0,"P",primpoints0[edgebuilder]);
-      vector position2 = point(0,"P",primpoints0[ edgebuilder-1 ]);
+    for(int edgebuilder = len(primpoints0)-1; edgebuilder>-close0;edgebuilder--){
+      vector position1 = point(1,"P",primpoints0[edgebuilder]);
+      vector position2 = point(1,"P",primpoints0[ edgebuilder-1 ]);
 
-      for(int dividerEdge = len(primpoints1)-1; dividerEdge>=0-close1;dividerEdge--){
-        vector position3 = point(1,"P",primpoints1[dividerEdge]); 
-        vector position4 = point(1,"P",primpoints1[ dividerEdge-1 ]);
+      for(int dividerEdge = len(primpoints1)-1; dividerEdge>-close1;dividerEdge--){
+        vector position3 = point(2,"P",primpoints1[dividerEdge]); 
+        vector position4 = point(2,"P",primpoints1[ dividerEdge-1 ]);
 
         vector collision = segsegXZ(position1[0],position1[2],position2[0],position2[2],position3[0],position3[2],position4[0],position4[2]);
         if(collision[1]>-1.0){
-          drawAngle(collision, 0.1,0.0,hsvtorgb(0.2,1,5));
+          //drawAngle(collision, 0.1,0.0,hsvtorgb(0.2,1,5));
+          int npidx = find(primpoints0, primpoints0[edgebuilder]); 
+          push(npIndex,npidx);
+          push(npLake,ip1);
+          push(npLocation,collision);
+          /*
           float res = 8;
-          for(float points=0;points<res;points++){
+          for(float points=0;points<res;points++){ //create circle segments, and test against those.
             //printf("points:%f\\n",points);
             float fraction = points/res;
             float fraction2 = (points+1)/res;
@@ -144,8 +153,29 @@ for(int ip0=0; ip0<np0;ip0++){    //ip0;each primitive in geo0
               }
             }
           }
+          */
         }
       }
+    }
+  }
+  //printf("npindex: %f, nplake: %f, nplocation: %f\\n",npIndex,npLake,npLocation);
+  //build new geo.
+  int pass;
+  int newgeo;
+  if(close0==1){ newgeo=addprim(0,"poly");/*push(primpoints0,primpoints0[0]);*/}else{newgeo=addprim(0,"polyline");}
+  foreach(int new; int pnt; primpoints0){
+    vector loc = point(1,"P",pnt);
+    int newPoint = addpoint(0,loc);
+    pass = setpointattrib(0, "Cd", newPoint, hsvtorgb(0.5,1,0.1), "set");
+    pass = setpointattrib(0, "lake", newPoint, itoa(-1), "set");
+    int newVertex = addvertex(0,newgeo,newPoint);
+    int foundIndex = find(npIndex, (new+1)%len(primpoints0));
+    if(foundIndex>-1){
+      //insert intersection point.
+      int intersectionPoint = addpoint(0,npLocation[foundIndex]);
+      pass = setpointattrib(0, "Cd", intersectionPoint, hsvtorgb(0.3,1,5), "set");
+      pass = setpointattrib(0, "lake", intersectionPoint, itoa(npLake[foundIndex]), "set");
+      newVertex = addvertex(0,newgeo,intersectionPoint);
     }
   }
 }
