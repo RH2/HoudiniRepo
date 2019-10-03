@@ -163,19 +163,34 @@ for(int ip0=0; ip0<np0;ip0++){    //ip0;each primitive in geo0
   int pass;
   int newgeo;
   if(close0==1){ newgeo=addprim(0,"poly");/*push(primpoints0,primpoints0[0]);*/}else{newgeo=addprim(0,"polyline");}
-  foreach(int new; int pnt; primpoints0){
+  foreach(int primpoint0iterator; int pnt; primpoints0){ //rebuilding the primitive.
+    int nextpnt = primpoints0[primpoint0iterator+1];
     vector loc = point(1,"P",pnt);
+    vector loc2 = point(1,"P",nextpnt);
+    float od= distance(loc,loc2);
+
     int newPoint = addpoint(0,loc);
     pass = setpointattrib(0, "Cd", newPoint, hsvtorgb(0.5,1,0.1), "set");
     pass = setpointattrib(0, "lake", newPoint, itoa(-1), "set");
     int newVertex = addvertex(0,newgeo,newPoint);
-    int foundIndex = find(npIndex, (new+1)%len(primpoints0));
-    if(foundIndex>-1){
-      //insert intersection point.
-      int intersectionPoint = addpoint(0,npLocation[foundIndex]);
-      pass = setpointattrib(0, "Cd", intersectionPoint, hsvtorgb(0.3,1,5), "set");
-      pass = setpointattrib(0, "lake", intersectionPoint, itoa(npLake[foundIndex]), "set");
-      newVertex = addvertex(0,newgeo,intersectionPoint);
+
+    int foundIndex[] = find(npIndex, (primpoint0iterator+1)%len(primpoints0)); //if npIndex has the current edge in storage.
+    if(len(foundIndex)!=0){
+      float foundD[];//convert point to u coordinate
+      foreach(int dsearch;foundIndex){
+        push(foundD,distance(loc,npLocation[dsearch]));
+      }
+      int dorder[] = argsort(foundD);
+      int foundIndex_sorted[] = reorder(foundIndex,dorder);
+      foreach(int fi; foundIndex_sorted){
+        if(fi==-1){break;}else{        
+          //insert intersection point.
+          int intersectionPoint = addpoint(0,npLocation[fi]);
+          pass = setpointattrib(0, "Cd", intersectionPoint, hsvtorgb(0.3,1,5), "set");
+          pass = setpointattrib(0, "lake", intersectionPoint, itoa(npLake[fi]), "set");
+          newVertex = addvertex(0,newgeo,intersectionPoint);
+        }
+      }
     }
   }
 }
