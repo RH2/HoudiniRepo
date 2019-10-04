@@ -93,7 +93,7 @@
 
 
 //constants
-	float diameter = 1.2;
+	float diameter = 0.5;
 	float radius = diameter/2;
 	float pi = 3.14159264;
 	float tau = 3.14159264*2;
