@@ -1,0 +1,56 @@
+//for each point, we derive how "inside" it is based on how many loops contain it.
+
+//int ptindex = @ptnum;
+//vector position = @P;
+//float px = position[0];
+//float py = position[2];
+//float fraction = ptindex/npoints(0);
+//printf("frac:%f\\n",fraction);
+for(int p= 0; p<npoints(0);p++){
+  vector position = point(0,"P",p);
+  float px = position[0];
+  float py = position[2];
+  float fraction = p*1.0/npoints(0)*1.0; //*1.0 to cast <float>
+  int inside = 0;
+  for(int prim=0; prim<nprimitives(1);prim++){
+    int c = -1; //-1 == false.
+    int primpoints[] = primpoints(1,prim);
+    int closed =  primintrinsic(1, "closed", prim);
+    for(int primEdge= -closed; primEdge<len(primpoints)-1;primEdge++){
+      int pointA = primpoints[primEdge];
+      int pointB = primpoints[primEdge+1];
+      vector pointALoc = point(1,"P",pointA);
+      vector pointBLoc = point(1,"P",pointB);
+      float ax = pointALoc[0];
+      float ay = pointALoc[2];
+      float bx = pointBLoc[0];
+      float by = pointBLoc[2];
+      if((ay <= py && py < by) || (by <= py && py < ay)){
+        if((px < (bx - ax) * (py - ay) / (by - ay) + ax)){
+          c= c*-1;
+        }
+      }
+    }
+    if(c==-1){ //outside
+      int pass = setpointattrib(0, "Cd", p, hsvtorgb(.3,1,2), "set");
+      inside++;
+
+
+    }else{ 
+      int pass = setpointattrib(0, "Cd", p, hsvtorgb(0,1,1), "set");
+      inside--;
+      break;
+    }   
+  }
+  int pass = setpointattrib(0, "in", p, inside, "set");
+}
+
+
+
+
+
+
+
+
+
+
