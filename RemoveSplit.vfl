@@ -1,4 +1,5 @@
 int currentPrim;
+int pass;
 for(int p = 0; p<nprimitives(1);p++){
 	int pointArray[] = primpoints(1,p);
 	//Conditions to create new primitive?
@@ -11,7 +12,7 @@ for(int p = 0; p<nprimitives(1);p++){
 		int pnt_Id = point(1,"id",pnt);
 		int pnt_In = point(1,"in",pnt);
 		vector loc;
-		if(pnt_In>0&&pnt_Id==-1){ //point is bad!
+		if(pnt_In==-1 && pnt_Id==-1){ //point is bad!
 			flip = 0;
 		}else{				//else:	point is good!
 			flip = 1;
@@ -19,14 +20,12 @@ for(int p = 0; p<nprimitives(1);p++){
 			if(flip!=prev_flip){
 				//rising edge, create new prim.
 				currentPrim = addprim(0,"polyline");
-				//add point
-				int new_point = addpoint(0,loc); 
-				int new_vert = addvertex(0,currentPrim,new_point);				
-			}else{
-				//add point
-				int new_point = addpoint(0,loc); 
-				int new_vert = addvertex(0,currentPrim,new_point);					
 			}
+			//if good, add point
+			int new_point = addpoint(0,loc);
+			pass = setpointattrib(0, "id", pnt, pnt_Id, "set"); 
+			int new_vert = addvertex(0,currentPrim,new_point);				
 		}
+		prev_flip=flip;
 	}
 }
