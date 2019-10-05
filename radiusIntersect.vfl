@@ -1,0 +1,216 @@
+//Line has 2 coodinate pairs. L1:x1x2y1y2 & L2:x3,x4,y3,y4
+vector segsegXZ(float x1; float y1;float x2;float y2;float x3;float y3;float x4;float y4) {
+  float a1, a2, b1, b2, c1, c2; // Coefficients of line eqns.
+  float r1, r2, r3, r4;         // 'Sign' values
+  float denom, offset;          // Intermediate values
+  float x, y;                   // Intermediate return values
+
+  // Compute a1, b1, c1, where line joining points 1 and 2
+  // is "a1 x  +  b1 y  +  c1  =  0".
+  a1 = y2 - y1;
+  b1 = x1 - x2;
+  c1 = x2 * y1 - x1 * y2;
+
+  // Compute r3 and r4.
+  r3 = a1 * x3 + b1 * y3 + c1;
+  r4 = a1 * x4 + b1 * y4 + c1;
+
+  // Check signs of r3 and r4.  If both point 3 and point 4 lie on
+  // same side of line 1, the line segments do not intersect.
+  if ( r3 != 0 && r4 != 0 && ((r3 >= 0 && r4 >= 0) || (r3 < 0 && r4 < 0))) {
+    return({0,-1,0});// no intersection
+  }
+
+
+  // Compute a2, b2, c2
+  a2 = y4 - y3;
+  b2 = x3 - x4;
+  c2 = x4 * y3 - x3 * y4;
+
+  // Compute r1 and r2
+  r1 = a2 * x1 + b2 * y1 + c2;
+  r2 = a2 * x2 + b2 * y2 + c2;
+
+  // Check signs of r1 and r2.  If both point 1 and point 2 lie
+  // on same side of second line segment, the line segments do
+  // not intersect.
+  if (r1 != 0 && r2 != 0 && ((r1 >= 0 && r2 >= 0) || (r1 < 0 && r2 < 0))) {
+    return({0,-1,0});// no intersection
+  }
+
+  // Line segments intersect: compute intersection point.
+  denom = a1 * b2 - a2 * b1;
+
+  if ( denom == 0 ) {
+    return({0,-2,0});//true.
+  }
+
+  offset = denom < 0 ? - denom / 2 : denom / 2;
+
+  x = b1 * c2 - b2 * c1;
+  y = a2 * c1 - a1 * c2;
+
+  float retx=( x < 0 ? x : x ) / denom;
+  float rety=( y < 0 ? y : y ) / denom;
+  return(set(retx,0,rety));
+}
+void drawAngle(vector position;float scale; float radians; vector color){
+  //draw a circle with 10 points.
+  float pi = 3.141592;
+  int circle = addprim(0,"polyline");
+  float total = 36;
+  for(int points=0;points<total;points++){
+        float fraction = points/total;
+        int p = addpoint(0, set(position[0]+cos(fraction*2*pi)*scale ,position[1],position[2]+sin(fraction*2*pi)*scale));
+        int pass = setpointattrib(0, "Cd", p, color/5, "set");
+        addvertex(0, circle, p);
+  }
+  int p = addpoint(0, set(position[0]+1*scale ,position[1],position[2]+0*scale));
+  int pass = setpointattrib(0, "Cd", p, color/5, "set");
+  addvertex(0, circle, p);
+  //draw angle
+  int direction = addprim(0,"polyline");
+  int p0 = addpoint(0,position);
+  int p1 = addpoint(0,set(position[0]+cos(radians)*scale ,position[1],position[2]+sin(radians)*scale));
+  pass = setpointattrib(0, "Cd", p0, color*2, "set");
+  pass = setpointattrib(0, "Cd", p1, color*2, "set");
+
+  addvertex(0,direction,p0);
+  addvertex(0,direction,p1);
+
+  int reference = addprim(0,"polyline");
+  int p00 = addpoint(0, set(position[0]+(1*scale),position[1],position[2]+(0*scale)));
+  int p01 = addpoint(0, set(position[0]+(1.2*scale),position[1],position[2]+(0*scale)));
+  pass = setpointattrib(0, "Cd", p00, color, "set");
+  pass = setpointattrib(0, "Cd", p01, color, "set");
+  addvertex(0,reference,p00);
+  addvertex(0,reference,p01);
+}
+//initial test:
+//vector intersection = segsegXZ(0.0,0.0,5.0,5.0,0.0,5.0,5.0,0.0);
+//drawAngle(intersection, 1.0,0.0,{1.0,0,1.0});
+
+
+int pass;
+int pointsInside[]; //used to exclude points from the geometry reconstruct.
+int previousPoint[];
+int collisionID[];  //will add "leaf" designation when writing ID.
+vector Positions[];
+
+float pi2 = 3.141592;
+float radius = 0.3;
+int np1 = nprimitives(1);
+for(int ix=0; ix<np1;ix++){ //for each primitive:
+
+  int primClosed =  primintrinsic(1, "closed", ix);
+  int pointArray[] = primpoints(1,ix);
+  vector pointLocations[];
+  foreach(int pntInArray;pointArray){
+    vector ploc = point(1,"P",pntInArray);
+    push(pointLocations,ploc);
+  }
+  foreach(int pntIndex;int pnt; pointArray){//for each point in primitive:
+    int crossID = point(1,"id",pnt);
+    //printf("crossID: %f\\n",crossID);
+    if(crossID>-1){
+      vector radiusOrigin = pointLocations[pntIndex];
+      //drawAngle(radiusOrigin+{0.03,0.0,0.0}, radius,0.0,hsvtorgb(0.05,1,2));
+      //segseg all edges in *this prim* against circle generated at this point.
+      for(int edge = -primClosed; edge<len(pointArray)-1;edge++){//all primitive edges:
+        vector locationA = pointLocations[edge];
+        vector locationB = pointLocations[edge+1];
+        //printf("locationA: %f\\n",locationA);
+        //printf("radiusOrigin: %f\\n",radiusOrigin);
+        float pointDistToIntersect = distance(locationA,radiusOrigin);
+        if( pointDistToIntersect<=(radius*1.2)){
+          //printf("dist: %f\\n",pointDistToIntersect);
+          push(pointsInside,pointArray[edge]);//track points that are inside radius.
+        }
+
+        //all virtual circle edges:
+        float res = 8;
+        for(float points=0;points<res;points++){ //create circle segments, and test against those.
+          //printf("points:%f\\n",points);
+          float fraction = points/res;
+          float fraction2 = (points+1)/res;
+          float f_scale = radius;
+          vector circle_pointA = set(
+            radiusOrigin[0]+cos(fraction*2.0*pi2)*f_scale,
+            0,
+            radiusOrigin[2]+sin(fraction*2.0*pi2)*f_scale);
+          vector circle_pointB = set(
+            radiusOrigin[0]+cos(fraction2*2.0*pi2)*f_scale,
+            0,
+            radiusOrigin[2]+sin(fraction2*2.0*pi2)*f_scale);
+
+          vector position3b = point(1,"P",pointArray[edge]);
+
+          vector position4b = point(1,"P",pointArray[edge+1]);
+          vector collision2 = segsegXZ(circle_pointA[0],circle_pointA[2],circle_pointB[0],circle_pointB[2],locationA[0],locationA[2],locationB[0],locationB[2]);
+          if(collision2[1]>-1.0){
+            //drawAngle(collision2, 0.02,0.0,hsvtorgb(0.05,1,2));
+            push(collisionID,crossID);
+            push(Positions,collision2);
+            push(previousPoint,pointArray[edge]);
+          }//draw if there is a collision
+        }//circle segment compare
+      }//all prim edges
+    }//if statement
+  }
+}
+//rebuild with new points.
+printf("pointsInside: %f\\n",pointsInside);
+//printf("collisionID: %f\\n",collisionID);
+//printf("Positions: %f\\n",Positions);
+//printf("previousPoint: %f\\n",previousPoint);
+
+
+
+//REBUILD LAKES
+for(int lakprim=0; lakprim<np1; lakprim++){
+  int lakpnts[] = primpoints(1,lakprim);
+  int lakclose =  primintrinsic(1, "closed", lakprim);
+  int primReconstruct;
+  if(lakclose==1){primReconstruct = addprim(0,"poly");}else{primReconstruct = addprim(0,"polyline");}
+  pass = setprimattrib(0,"river", primReconstruct, 0, "set");
+  for(int lakpnt= -lakclose; lakpnt<len(lakpnts);lakpnt++){
+    int thislakpnt = lakpnts[lakpnt];
+    vector SegmentOrigin = point(1,"P",thislakpnt);
+    int existingID = point(1,"id",thislakpnt);
+
+
+    //printf("thislakpnt: %f\\n",thislakpnt);
+    //printf("pointsInside: %f\\n",pointsInside);
+    //printf("1.ID:\\t%f\\n",existingID);
+    //printf("2.ID:\\t%f\\n",existingID);
+    if(find(pointsInside,thislakpnt)<-1 || (existingID>-1)){//if not inside || or intercept
+    //if(find(pointsInside,thislakpnt)>0){//if not found:
+      //pass = setpointattrib(0, "inside", SegmentOriginPnt, 0, "set"); 
+      int SegmentOriginPnt = addpoint(0,SegmentOrigin); 
+      pass = setpointattrib(0, "Cd", SegmentOriginPnt, hsvtorgb(0.8,1.0,0.2), "set"); 
+      pass = setpointattrib(0, "id", SegmentOriginPnt, existingID, "set"); 
+      int vtx = addvertex(0,primReconstruct,SegmentOriginPnt);
+    }
+
+
+
+
+
+    int collisionsOnSegment[] = find(previousPoint,thislakpnt);
+    if(len(collisionsOnSegment)>=1){
+      float distArray[];
+      foreach(int cross; collisionsOnSegment){ //collisionsOnSegment is a bunch of indices.
+      push(distArray, distance(SegmentOrigin,Positions[cross]));
+      }
+      int distOrder[] = argsort(distArray);
+      int collisionsOnSegment_Sorted[] = reorder(collisionsOnSegment, distOrder);
+      foreach(int cross; collisionsOnSegment_Sorted){
+        int addpnt = addpoint(0,Positions[cross]);
+        pass = setpointattrib(0, "Cd", addpnt, hsvtorgb(0.0,1,5), "set");
+        pass = setpointattrib(0, "id", addpnt, collisionID[cross], "set");
+        pass = setpointattrib(0, "leaf", addpnt, 1, "set");
+        int addvrt = addvertex(0,primReconstruct,addpnt);
+      }
+    }
+  }
+}
