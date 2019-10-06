@@ -1,0 +1,86 @@
+//Objective: move vertices to the nearest point with the same id in the rivergeo.
+
+//1. identify / filter points of interest.
+//create array of lake "leaf" nodes
+//deez = important points to focus.
+int these_lPnts[];
+int these_rPnts[];
+int these_lPnts_id[];
+int these_rPnts_id[];
+
+float radius; 
+
+//Identify size of search:
+int lPnts = npoints(0); 
+int rPnts = npoints(1);
+
+
+//Gather important points. (lakes)
+for(int l = 0; l<lPnts; l++){
+	int thisid = point(0,"id",l);
+	int thisleaf = point(0,"leaf",l);
+	if(thisid!=-1&&thisleaf==1){
+		push(these_lPnts,l);
+		push(these_lPnts_id,thisid);
+	}
+}
+
+//Gather important points. (rivers)
+for(int r = 0; r<rPnts; r++){
+	int thisid = point(1,"id",r);
+	int thisleaf = point(1,"leaf",r);
+	if(thisid!=-1&&thisleaf==1){
+		push(these_rPnts,r);
+		push(these_rPnts_id,thisid);
+	}
+}
+
+
+//Sort the arrays 
+int orderL[] = argsort(these_lPnts_id);
+these_lPnts = reorder(these_lPnts, orderL);
+these_lPnts_id = reorder(these_lPnts_id, orderL);
+
+int orderR[] = argsort(these_rPnts_id);
+these_rPnts = reorder(these_rPnts, orderR);
+these_rPnts_id = reorder(these_rPnts_id, orderR);
+
+vector these_l_LOC[]; foreach(int lpnt; these_lPnts){vector al = point(0,"P", lpnt);push(these_l_LOC, al);} 
+vector these_r_LOC[]; foreach(int rpnt; these_rPnts){vector al = point(1,"P", rpnt);push(these_r_LOC, al);}
+
+//debug
+	//printf("these_rPnts: %f\\n",these_rPnts);
+	//printf("these_rPnts_id: %f\\n",these_rPnts_id);
+	//printf("these_lPnts: %f\\n",these_lPnts);
+	//printf("these_lPnts_id: %f\\n",these_lPnts_id);
+
+int processedIDs[]; //
+//find indices with id.
+
+//Merge based on sorted distance.
+foreach(int processIndex; int idProcess; these_lPnts_id){
+	if(find(processedIDs,idProcess)<0){ //only process fresh ids.
+		int lakPoints_Address[] = find(these_lPnts_id,idProcess);	//indices 
+		int rivPoints_Address[] = find(these_rPnts_id,idProcess);	
+		for(int search = 0; search< len(lakPoints_Address); search++){ //for each river leaf
+			int thisAddress_l = lakPoints_Address[search]; //thisAddress_l is the index of the current lake node.
+			vector thisLakeNodePosition = these_l_LOC[thisAddress_l];
+			float minimumDist=99999999;
+			vector closestPosition = {0,0,0};
+			for(int search2=0; search2< len(rivPoints_Address); search2++){
+				int riverPointAddress = rivPoints_Address[search2];
+				vector thisRiverNodePosition  = these_r_LOC[riverPointAddress];
+				float thisdistance = distance(thisLakeNodePosition,thisRiverNodePosition);//XZ dist
+				if(thisdistance<minimumDist){
+					minimumDist = thisdistance;
+					closestPosition = thisRiverNodePosition;
+				}
+			}
+			//move point to other point.
+			if(closestPosition!={0,0,0}){
+				int pass = setpointattrib(0,"P",these_lPnts[thisAddress_l],closestPosition,"set");
+			}
+		}
+		push(processedIDs,idProcess);
+	}
+}

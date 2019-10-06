@@ -1,12 +1,12 @@
 int currentPrim;
 int pass;
-for(int p = 0; p<nprimitives(1);p++){
-	int pointArray[] = primpoints(1,p);
+for(int p = 0; p<nprimitives(1);p++){//for each primitive:
+	int pointArray[] = primpoints(1,p);//get an array of all points
 	//Conditions to create new primitive?
 		// Rising edge, going from bad point to good point.
 	int prev_flip = 0;
 	int flip = 0;
-	foreach(int pnt; pointArray){
+	foreach(int pnt; pointArray){ //for each point in each primitive:
 		//what is a bad point? 
 			//inside + !intersection
 		int pnt_Id = point(1,"id",pnt);
@@ -23,7 +23,8 @@ for(int p = 0; p<nprimitives(1);p++){
 			}
 			//if good, add point
 			int new_point = addpoint(0,loc);
-			pass = setpointattrib(0, "id", pnt, pnt_Id, "set"); 
+			pass = setpointattrib(0, "id", new_point, pnt_Id, "set");
+			//printf("pass: %f\\n",pass); 
 			int new_vert = addvertex(0,currentPrim,new_point);				
 		}
 		prev_flip=flip;

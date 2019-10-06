@@ -628,6 +628,7 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 
 
 			vector thisLocation = point(0,"P",thispoint);
+			int thisID = point(0,"id",thispoint);
 			float m90 = clampAngle(thisangle-pi/2);		//m90 and p90 are for calculating the position of the left and right points. 
 			float p90 = clampAngle(thisangle+pi/2);
 	
@@ -642,8 +643,12 @@ for(int sweep=0; sweep<startingPrimCount;sweep++){
 
 			int pl = addpoint(0,locL);
 			//int sc1=setpointattrib(0,"Cd",pl,{0.1,0,0.1},"set");
+			int sc1=setpointattrib(0,"id",pl,thisID,"set");
+			sc1=setpointattrib(0,"leaf",pl,1,"set");
 			int pr = addpoint(0,locR);
 			//int sc2=setpointattrib(0,"Cd",pr,{0.1,0,0.1},"set");
+			int sc2=setpointattrib(0,"id",pr,thisID,"set");
+			sc2=setpointattrib(0,"leaf",pr,1,"set");
 	
 			vector upUV = set(
 				thisUV[0],
