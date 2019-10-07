@@ -1,0 +1,16 @@
+//Reorder curves based on y-height of first and last point. 
+//For each prim, get the first and last point.
+//If first point is lower than higher point, add prim to reverse group.
+
+
+int primCount = nprimitives(0);
+for(int primIndex = 0; primIndex< primCount; primIndex++){
+	int thesePoints[] = primpoints(0,primIndex);
+	int firstPoint = thesePoints[0];
+	int lastPoint = thesePoints[-1];
+	vector Loc_I = point(0,"P",firstPoint);
+	vector Loc_L = point(0,"P",lastPoint);
+	if(Loc_I[1]<Loc_L[1]){
+		int pass = setprimgroup(0, "reverse", primIndex, 1, "set");
+	}
+}
