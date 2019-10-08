@@ -1,0 +1,18 @@
+int pass;
+int thisPrim = @primnum;
+
+float length = primattrib(0, "pmtr", thisPrim, pass);
+//get the first and last point
+int pointArray[] = primpoints(0,thisPrim);
+//int nci= point(0,"neigh",pointArray[0]);
+//int ncf= point(0,"neigh",pointArray[-1]);
+int nci = neighbourcount(0,pointArray[0]);
+int ncf = neighbourcount(0,pointArray[-1]);
+vector pi= point(0,"P",pointArray[0]);
+vector pf= point(0,"P",pointArray[-1]);
+float dist = distance(pi,pf);
+if(nci<3||ncf<3){
+	if(dist<1.0){
+		removeprim(0,thisPrim,1);
+	}
+}
