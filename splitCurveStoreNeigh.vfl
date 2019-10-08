@@ -1,0 +1,29 @@
+//Objective: split each edge into a new prim.
+//Note: attribute "neigh" is the result of the neighbourcount function,
+//will be useful for merging this back together properly.  
+
+
+int pcount = nprimitives(1);
+for(int i =0; i<pcount; i++){
+    int pointArray[] = primpoints(1,i);
+    int n_Array[]; foreach(int pn; pointArray){int n = point(1,"neigh",pn); push(n_Array, n);}
+    vector p_Array[]; foreach(int pn; pointArray){vector p = point(1,"P",pn); push(p_Array, p);}
+    int LEN = len(pointArray);
+    for(int pnt =0; pnt<LEN-1;pnt++){
+        int nPrim = addprim(0,"polyline");
+        int p1 = addpoint(0,p_Array[pnt]);
+        int p2 = addpoint(0,p_Array[pnt+1]);
+        int set1 = setpointattrib(0,"neigh",p1,n_Array[pnt],"set");
+        int set2 = setpointattrib(0,"neigh",p2,n_Array[pnt+1],"set");
+        int v1 = addvertex(0,nPrim,p1);
+        int v2 = addvertex(0,nPrim,p2);
+        int j1=0; if(n_Array[pnt]>=3){j1=1;}
+        int j2=0; if(n_Array[pnt+1]>=3){j2=1;}
+        //printf("j1:%f\\n",j1);
+
+        //int g1 = setvertexgroup(0, "j", nPrim, v1, j1, "set");
+        //int g2 = setvertexgroup(0, "j", nPrim, v2, j2, "set");
+        int pg1 = setpointgroup(0, "j", p1, j1,"set");
+        int pg2 = setpointgroup(0, "j", p2, j2,"set");
+    }
+}
