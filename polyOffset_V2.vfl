@@ -107,19 +107,25 @@ for(int createArray = 0; createArray<npoints;createArray++){
 for(int n2search = 0 ; n2search<npoints-1; n2search++){
 	vector p1 = point(0,"P",n2search);
 	int I_n[];
-	string S_n = ",";
+	push(I_n, n2search);
 	//go through every point and find all points within search distance.
 	for(int n3 = n2search+1; n3< npoints; n3++){
 		vector p2 = point(0,"P",n3);
-		float d = distance(p1,p2);
-		if(d<0.1){
+		float p1p2dist = distance(p1,p2);
+		if(p1p2dist<0.1){
 			push(I_n,n3);
-			S_n=S_n+itoa(n3)+",";
 		}
 	}
 	//now write to all addresses found
 	foreach(int address; I_n){
-		originalJunctions_Location[address]= S_n; 
+		//create string
+		string overlapping = ",N";
+		foreach(int item; I_n){
+			if(item!=address){
+				overlapping+= itoa(item)+",";
+			}
+		}
+		originalJunctions_Location[address]= overlapping; 
 	}
 }
 
