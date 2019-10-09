@@ -1,23 +1,23 @@
 //HEADER: CurveExpand
 //customFunctions
 	float clampAngle(float inputAngle){
-    float x = inputAngle/3.14159265;
-    x=x%2;
-    if(x>1){
-        x=-1+(x%1);
-    }
-    if(x<-1){
-        x=1+(x%1);
-    }
-    x = x*3.14159265;
-    return x;
-	}
+    	float x = inputAngle/3.14159265;
+    	x=x%2;
+    	if(x>1){
+    	    x=-1+(x%1);
+    	}
+    	if(x<-1){
+    	    x=1+(x%1);
+    	}
+    	x = x*3.14159265;
+    	return x;
+		}
 	void mergeArray(int array1[];int array2[]){
-        foreach(int a2; array2){
-                if(find(array1,a2)<0){
-                        push(array1, a2);
-                }
-        }
+    	    foreach(int a2; array2){
+    	            if(find(array1,a2)<0){
+    	                    push(array1, a2);
+    	            }
+    	    }
 	}
 	float angleBetweenVectors2(vector a; vector b){
         a = normalize(a*{1,0,1});
@@ -56,7 +56,6 @@
 			Set+=itoa(i);
 		}
 	}
-
 	void drawAngle(vector position;float scale; float radians; vector color){
 	  //draw a circle with 10 points.
 	  int circle = addprim(0,"polyline");
@@ -97,6 +96,35 @@
 	float radius = diameter/2;
 	float pi = 3.14159264;
 	float tau = 3.14159264*2;
+
+
+//create array that stores all point pairs, based on location.
+string originalJunctions_Location[];
+int npoints = npoints(0);
+for(int createArray = 0; createArray<npoints;createArray++){
+	push(originalJunctions_Location,",");
+}
+for(int n2search = 0 ; n2search<npoints-1; n2search++){
+	vector p1 = point(0,"P",n2search);
+	int I_n[];
+	string S_n = ",";
+	//go through every point and find all points within search distance.
+	for(int n3 = n2search+1; n3< npoints; n3++){
+		vector p2 = point(0,"P",n3);
+		float d = distance(p1,p2);
+		if(d<0.1){
+			push(I_n,n3);
+			S_n=S_n+itoa(n3)+",";
+		}
+	}
+	//now write to all addresses found
+	foreach(int address; I_n){
+		originalJunctions_Location[address]= S_n; 
+	}
+}
+
+printf("oj_l: %f\\n",originalJunctions_Location);
+
 
 
 int loops[];
