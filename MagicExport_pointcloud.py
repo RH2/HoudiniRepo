@@ -24,8 +24,9 @@ dimZ=126
 myGeo =  hou.node('/obj/geo1/ptcld_mat').geometry()
 for pnt in myGeo.points():
 	loc = pnt.attribValue('P')
-	mat = pnt.attribValue('mat')
-	outputVoxels+=pack("4B",int(loc[0]),int(loc[1]),int(loc[2]),int(mat))
+	if (0<loc[0] and loc[0]<126) and  (0<loc[1] and loc[1]<126)     and  (0<loc[2] and loc[2]<126)   :
+		mat = pnt.attribValue('mat')
+		outputVoxels+=pack("4B",int(loc[0]),int(loc[1]),int(loc[2]),int(mat))    
 #for x in xrange(0,dimX):
 #	for y in xrange(0,dimY):
 #		for z in xrange(0,dimZ):
