@@ -89,20 +89,18 @@
 	  addvertex(0,reference,p01);
 	}
 
-
-
 //constants
-	float diameter = 0.5;
+	float diameter = 5;
 	float radius = diameter/2;
 	float pi = 3.14159264;
 	float tau = 3.14159264*2;
 
 
 //create array that stores all point pairs, based on location.
-string originalNeighbours = ","; // "N,x,y,z,N,i,j,k,N,a,b,c"
-int ends[];
-int processedEnds[];
-vector endLocations[];
+string originalOverlaps = ","; // "N,x,y,z,N,i,j,k,N,a,b,c"
+int Overlap_ends[];
+int Overlap_processedEnds[];
+vector Overlap_endLocations[];
 int npoints = npoints(0);
 int nprims = nprimitives(0);
 for(int primindex=0;primindex<nprims;primindex++){
@@ -111,46 +109,82 @@ for(int primindex=0;primindex<nprims;primindex++){
 	int lp = pointArray[-1];
 	vector floc = point(0,"P",fp);
 	vector lloc = point(0,"P",lp);
-	push(ends, fp);
-	push(ends, lp);
-	push(endLocations, floc);
-	push(endLocations, lloc);
+	push(Overlap_ends, fp);
+	push(Overlap_ends, lp);
+	push(Overlap_endLocations, floc);
+	push(Overlap_endLocations, lloc);
 }
-for(int match=0; match<len(ends)-1;match++){ //this code assumes that prims only meet at the ends.
-	int thisEnd = ends[match];
-	if(find(processedEnds,thisEnd)<0){
-		push(processedEnds, thisEnd);
-		vector thisLocation = endLocations[match];
+for(int match=0; match<len(Overlap_ends)-1;match++){ //this code assumes that prims only meet at the ends.
+	int thisEnd = Overlap_ends[match];
+	if(find(Overlap_processedEnds,thisEnd)<0){
+		push(Overlap_processedEnds, thisEnd);
+		vector thisLocation = Overlap_endLocations[match];
 		int thisGroup[];
-		for(int match2=match+1;match2<len(ends);match2++){
-			int otherEnd = ends[match2];
-			vector otherLocation = endLocations[match2];
+		for(int match2=match+1;match2<len(Overlap_ends);match2++){
+			int otherEnd = Overlap_ends[match2];
+			vector otherLocation = Overlap_endLocations[match2];
 			float distance = distance(thisLocation, otherLocation);
 			if(distance<0.01){
 				push(thisGroup, otherEnd);
-				push(processedEnds, otherEnd);
+				push(Overlap_processedEnds, otherEnd);
 
 			}
 		}
 		//construct the string.
 		if(len(thisGroup)!=0){
-			drawAngle(thisLocation;0.1; 0.0; {1,1,0})
-			string output = "N"+itoa(thisEnd)+",";
+			drawAngle(thisLocation,5, 0.0, {1,1,0});
+			string output = "N,"+itoa(thisEnd)+",";
 			foreach(int g; thisGroup){
 				output+=itoa(g)+",";
 			}
-			originalNeighbours+=output;
+			originalOverlaps+=output;
 		}
 	}
 }
-printf("oj_l: %f\\n",originalNeighbours);
+//printf("oj_l: %f\\n",originalOverlaps);
+
+//define the mechanisms for accessing data from this string.
+int PNTOVRLAP_RESULT[]; 
+void Pntoverlap(string source;int address; int outArray[]){
+	string S_addresss = ","+itoa(address)+",";
+	if(find(source, S_addresss)>-1){//IF ADDRESS EXISTS.
+		string LocalSets[] = split(source,"N");		
+		foreach(string local; LocalSets){
+			if(find(local, S_addresss)>-1){//IF ADDRESS IS IN CURRENT SET.
+				int results[];
+				string S_nums[] = split(local, ",");
+				foreach(string S_point; S_nums){
+					int stoi = atoi(S_point);
+					if(stoi!=address){
+						push(results,stoi);
+					}
+				}
+				outArray = results;
+				return;
+			}
+		}
+	}
+	outArray = {};
+	return;
+}
+//Pntoverlap(originalOverlaps, 908, PNTOVRLAP_RESULT);
+//printf("npr: %f\\n",PNTOVRLAP_RESULT);
+//printf("len(npr): %f\\n",len(PNTOVRLAP_RESULT));
+
+//10102019: edited lines 184>185,186; 246>147,248
+//neightbourcount modified on 199 and 226
+
+
 
 
 
 int loops[];
 for(int loopcandidate=0;loopcandidate<nprimitives(0);loopcandidate++){//find all cyclic curves.
 	int loopPoints[] = primpoints(0,loopcandidate);//get all points
-	int firstNs[] = neighbours(0,loopPoints[0]);
+	//int firstNs[] = neighbours(0,loopPoints[0]);
+	Pntoverlap(originalOverlaps, loopPoints[0], PNTOVRLAP_RESULT);
+	int firstNs[] = PNTOVRLAP_RESULT;
+
 	if(find(firstNs,loopPoints[0] && len(firstNs)<3 )){	
 		push(loops,loopcandidate);
 	}
@@ -160,8 +194,11 @@ for(int loopcandidate=0;loopcandidate<nprimitives(0);loopcandidate++){//find all
 int originalJunctions[];
 //record points with more than 3 neighbours
 for(int nCheck=0; nCheck<npoints(0);nCheck++){
-	if(neighbourcount(0,nCheck)>2){
+	Pntoverlap(originalOverlaps, nCheck, PNTOVRLAP_RESULT);
+	int overlapCount =  len(PNTOVRLAP_RESULT);
+	if(overlapCount>1){
 		push(originalJunctions,nCheck);
+		printf("originalJunctions: %f\\n",originalJunctions);
 	}
 }
 
@@ -187,8 +224,10 @@ for(int pPrimCheck=0;pPrimCheck<nprimitives(0);pPrimCheck++){
 	for(int pp=0;pp<len(pPoints);pp++){
 		int focusedPoint = pPoints[pp];
 		if(find(pointsTooClose,focusedPoint)<1){
-			int nCount = neighbourcount(0,focusedPoint);
-			if(nCount<3){//Check to see if is a junction.
+			//int nCount = neighbourcount(0,focusedPoint);
+			Pntoverlap(originalOverlaps, focusedPoint, PNTOVRLAP_RESULT);
+			int nCount = len(PNTOVRLAP_RESULT);
+			if(nCount<2){//Check to see if is a junction.
 				numberOfActivePoints++;//if point is not found, then it is active
 				break;//stop searching after first one is found.
 			}
@@ -207,7 +246,10 @@ for(int j=0;j<len(originalJunctions);j++){//each junction
 	push(reg,",");
 	push(rem,",");
 	int thisJunction = originalJunctions[j];
-	int theseNeighbours[] = neighbours(0,thisJunction);//each point connected to junction.
+	//int theseNeighbours[] = neighbours(0,thisJunction);//each point connected to junction.
+	Pntoverlap(originalOverlaps, thisJunction, PNTOVRLAP_RESULT);
+	int theseNeighbours[] = PNTOVRLAP_RESULT;
+
 	for(int jn=0;jn<len(theseNeighbours);jn++){
 		int thisNeighbour = theseNeighbours[jn];
 		int connectedPrims[] = pointprims(0,thisNeighbour);//only junctions have multiple prims.
@@ -934,3 +976,16 @@ foreach(int index; string junction; firstValidPoint){
 					uvpass= setvertexattrib(0,"uv",-1,rq4,uv_leafR,"set");
 	}
 }
+
+
+printf("originalJunctions: %f\\n",originalJunctions);
+printf("pointsTooClose: %f\\n",pointsTooClose);
+printf("pointlessPrims: %f\\n",pointlessPrims);
+printf("specialIntersections: %f\\n",specialIntersections);
+printf("sharesSimple: %f\\n",sharesSimple);
+printf("sharePrims: %f\\n",sharePrims);
+printf("shareDirection: %f\\n",shareDirection);
+printf("firstValidPoint: %f\\n",firstValidPoint);
+printf("V_shareLoc: %f\\n",V_shareLoc);
+printf("offsets: %f\\n",offsets);
+printf("pointleafleaf: %f\\n",pointleafleaf);
