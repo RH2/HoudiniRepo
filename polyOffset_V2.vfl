@@ -175,6 +175,26 @@ void Pntoverlap(string source;int address; int outArray[]){
 //neightbourcount modified on 199 and 226
 
 
+int OVERLAP_PRIM_RESULTS[];
+void PRMoverlap(string source; int address; int subresult[]; int outArray[]){
+	Pntoverlap(source, address, subresult);
+	outArray = pointprims(0,address);
+	foreach(int entry; subresult){
+		int pntprims[] = pointprims(0,entry);
+		foreach(int pp; pntprims){
+			push(outArray,pp);
+		}
+	}
+}
+
+//example: 
+PRMoverlap(originalOverlaps, 1508, PNTOVRLAP_RESULT, OVERLAP_PRIM_RESULTS);
+printf("OVERLAP_PRIM_RESULTS: %f\\n", OVERLAP_PRIM_RESULTS);
+
+
+
+
+
 
 
 
@@ -190,15 +210,10 @@ for(int loopcandidate=0;loopcandidate<nprimitives(0);loopcandidate++){//find all
 	}
 }
 
-
 int originalJunctions[];
-//record points with more than 3 neighbours
-for(int nCheck=0; nCheck<npoints(0);nCheck++){
-	Pntoverlap(originalOverlaps, nCheck, PNTOVRLAP_RESULT);
-	int overlapCount =  len(PNTOVRLAP_RESULT);
-	if(overlapCount>1){
-		push(originalJunctions,nCheck);
-		printf("originalJunctions: %f\\n",originalJunctions);
+foreach(string x; split(originalOverlaps,",")){
+	if(x!="N"){
+		push(originalJunctions, atoi(x));
 	}
 }
 
@@ -246,13 +261,15 @@ for(int j=0;j<len(originalJunctions);j++){//each junction
 	push(reg,",");
 	push(rem,",");
 	int thisJunction = originalJunctions[j];
-	//int theseNeighbours[] = neighbours(0,thisJunction);//each point connected to junction.
+	//int theseNeighbours[] = neighbours(0,thisJunction);//e gach point connected to junction.
 	Pntoverlap(originalOverlaps, thisJunction, PNTOVRLAP_RESULT);
 	int theseNeighbours[] = PNTOVRLAP_RESULT;
 
 	for(int jn=0;jn<len(theseNeighbours);jn++){
 		int thisNeighbour = theseNeighbours[jn];
-		int connectedPrims[] = pointprims(0,thisNeighbour);//only junctions have multiple prims.
+		PRMoverlap(originalOverlaps, thisNeighbour, PNTOVRLAP_RESULT, OVERLAP_PRIM_RESULTS); //int connectedPrims[] = pointprims(0,thisNeighbour);//only junctions have multiple prims.
+		int connectedPrims[] = OVERLAP_PRIM_RESULTS; 
+
 		for(int withP=0;withP<len(connectedPrims);withP++){
 			int thisConnectedPrim = connectedPrims[withP];
 			if(find(pointlessPrims,thisConnectedPrim)>-1){//if branch is found in pointless
@@ -305,11 +322,15 @@ for(int i=0;i<len(pointlessPrims);i++){
 						int initialEdges[]={};
 						int endEdges[]={};
 						if(find(processedPoints,rawPoints[0])<0){	//if not processed
-							initialEdges = pointprims(0,rawPoints[0]); //get connecting edges.
+							//initialEdges = pointprims(0,rawPoints[0]); //get connecting edges.
+							PRMoverlap(originalOverlaps, rawPoints[0], PNTOVRLAP_RESULT, OVERLAP_PRIM_RESULTS);
+							initialEdges = OVERLAP_PRIM_RESULTS;
 							push(processedPoints,rawPoints[0]);
 						}
 						if(find(processedPoints,rawPoints[-1])<0){	//if not processed
-							endEdges = pointprims(0,rawPoints[-1]);	//get connecting edges.
+							//endEdges = pointprims(0,rawPoints[-1]);	//get connecting edges.
+							PRMoverlap(originalOverlaps, rawPoints[-1], PNTOVRLAP_RESULT, OVERLAP_PRIM_RESULTS);
+							endEdges = OVERLAP_PRIM_RESULTS;
 							push(processedPoints,rawPoints[-1]);
 						}
 						//cocatinate pointless.
@@ -363,8 +384,16 @@ foreach(string oneSimpleShare; sharesSimple){ //for each collection of edges/pri
 		int end1 = rawpoints[0]; 
 		int end2 = rawpoints[-1];
 		int ends[];push(ends,end1);push(ends,end2);
-		int allConnectedPrims[] = pointprims(0,end1);
-		int otherPrims[] = pointprims(0,end2);
+		//int allConnectedPrims[] = pointprims(0,end1);
+		//int otherPrims[] = pointprims(0,end2);
+		PRMoverlap(originalOverlaps, end1, PNTOVRLAP_RESULT, OVERLAP_PRIM_RESULTS);
+		int allConnectedPrims[] = OVERLAP_PRIM_RESULTS;
+
+		PRMoverlap(originalOverlaps, end2, PNTOVRLAP_RESULT, OVERLAP_PRIM_RESULTS);
+		int otherPrims[] = OVERLAP_PRIM_RESULTS;
+
+
+
 		foreach(int oneOtherPrim; otherPrims){
 			push(allConnectedPrims,oneOtherPrim);
 		} //ALLCONNECTEDPRIMS = all edges attached to this prim.
@@ -544,7 +573,10 @@ foreach(int original; originalJunctions){
 
 
 		//point prims
-		int edges[] = pointprims(0, original);
+		//int edges[] = pointprims(0, original);
+		PRMoverlap(originalOverlaps, original, PNTOVRLAP_RESULT, OVERLAP_PRIM_RESULTS);
+		int edges[] = OVERLAP_PRIM_RESULTS;
+
 		foreach(int e; edges){
 			int edgepoints[] = primpoints(0,e);
 			if(edgepoints[0]==original){//is original first?
@@ -976,16 +1008,3 @@ foreach(int index; string junction; firstValidPoint){
 					uvpass= setvertexattrib(0,"uv",-1,rq4,uv_leafR,"set");
 	}
 }
-
-
-printf("originalJunctions: %f\\n",originalJunctions);
-printf("pointsTooClose: %f\\n",pointsTooClose);
-printf("pointlessPrims: %f\\n",pointlessPrims);
-printf("specialIntersections: %f\\n",specialIntersections);
-printf("sharesSimple: %f\\n",sharesSimple);
-printf("sharePrims: %f\\n",sharePrims);
-printf("shareDirection: %f\\n",shareDirection);
-printf("firstValidPoint: %f\\n",firstValidPoint);
-printf("V_shareLoc: %f\\n",V_shareLoc);
-printf("offsets: %f\\n",offsets);
-printf("pointleafleaf: %f\\n",pointleafleaf);
