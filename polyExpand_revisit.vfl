@@ -1,0 +1,46 @@
+//To fix the uv's we must first find a distance attribute between original points
+
+//for each prim group "class"
+int currentClass = 0;
+int foundPrimitives[];
+while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, escape when reaching highest class
+	printf("currentClass: %f\\n",currentClass);
+	foundPrimitives={};
+	//go through all primitives
+	int nprim = nprimitives(0);
+	for(int npim=0; npim<nprim;npim++){  //push all primitives of class x to foundPrimitives
+		//get prim class
+		int c = prim(0,"class",npim);
+		if(c==currentClass){
+			push(foundPrimitives,npim);
+		}
+	}
+	printf("found: %f\\n",foundPrimitives);
+	int originals[];
+	int boundaries[];	
+	foreach(int fprim; foundPrimitives){ //push all original points to an original array
+		int pointArray[] = primpoints(0,fprim);
+		foreach(int thisPoint; pointArray){
+			int original = inpointgroup(0, "original",thisPoint);//int  inpointgroup(<geometry>geometry, string groupname, int pointnum)
+			if(original==1){
+				if(find(originals, thisPoint)<0){
+					push(originals,thisPoint);					
+				}
+			}else{
+				if(find(boundaries, thisPoint)<0){
+					push(boundaries,thisPoint);					
+				}
+			}
+		}
+	}
+	printf("oringinals: %f\\n",originals);
+
+	//original points will be in ascending order, but first and last points are not guaranteed to be orderly.
+	//method 1: find angles to next point, and find ones that are 180° seperated from the mode.
+	//method 2: sort based on vertex values?
+
+
+
+
+	currentClass++;
+}
