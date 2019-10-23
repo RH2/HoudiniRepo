@@ -1,0 +1,12 @@
+//RUN OVER PRIMITIVES XZ PLANE
+int prmNUM = @primnum;
+//printf("prmNUM: %f\\n",prmNUM);
+int pointArray[] = primpoints(0,prmNUM);
+vector p1 = point(0,"P",pointArray[0]);
+vector p2 = point(0,"P",pointArray[-1]);
+vector delta = p2-p1;
+float dx = delta[0];
+float dz = delta[2];
+float angle = atan2(dz,dx);
+//angle = (angle*180/3.14159264);
+int pass = setprimattrib(0,"A",prmNUM, angle, "set");
