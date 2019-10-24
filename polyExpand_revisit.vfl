@@ -23,7 +23,6 @@ int currentClass = 0;
 int pass;
 int foundPrimitives[];
 while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, escape when reaching highest class
-	//printf("currentClass: %f\\n",currentClass);
 	foundPrimitives={}; 	///☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼///
 	//go through all primitives
 	int nprim = nprimitives(0);
@@ -35,7 +34,6 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 		}
 	}
 	if(len(foundPrimitives)>0){
-		//printf("found: %f\\n",foundPrimitives);
 		int originals[];			///☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼///
 		int boundaries[];			///☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼///
 		foreach(int fprim; foundPrimitives){ //push all original points to an original array
@@ -53,24 +51,22 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 				}
 			}
 		}
-		printf("oringinals: %f\\n",originals);
 		vector dir = prim(0,"dir",foundPrimitives[0]);
 		vector p1 = point(0,"P",originals[0]);
 		vector p2 = point(0,"P",originals[-1]);
 		vector dir2 = normalize(p2-p1);
 		float dot = dot(dir,dir2);
-		//printf("dot: %f\\n",dot);
 		if(dot<0){
 			originals = reverse(originals);
 		}
-		//find the distance to root for each orignal, and store
-		//printf("oringinals: %f\\n",originals);
+
+
+
+		//find the distance to root(first point in "originals[]") for each orignal, and store
 		float total = 0.0;
 		float ucoords[];
 		float originalAngles[];
 		vector originalPositions[];
-		push(ucoords,total);
-		pass = setpointattrib(0,"Uv",originals[0], set(total,0.5),"set");
 		for(int o=0;o<len(originals);o++){
 			int lastOriginal = originals[o-1];
 			int thisOriginal = originals[o];
@@ -87,7 +83,7 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 			//store location
 			push(originalPositions, o2);
 			//store angle
-			if(o>=len(originals)-1){
+			if(o<len(originals)-1){
 				push(originalAngles,a);
 			}else{//repeat last angle for last point
 				push(originalAngles,originalAngles[-1]);
@@ -98,10 +94,13 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 			}
 
 			//set uv coordinate
-			pass = setpointattrib(0,"uv",thisOriginal, set(total,0.5),"set");
 			push(ucoords, total);
+			vector ouv = set(total,0.5);
+			pass = setpointattrib(0,"uv",thisOriginal, ouv,"set");
+			pass = setpointattrib(0,"Cd",thisOriginal, hsvtorgb({0.1,1.0,1.0}),"set");
+			//vector ouv2 = set(total,0);
+			//pass = setpointattrib(0,"uv",thisOriginal, ouv2,"set");
 		}
-		printf("ucoord: %f\\n",ucoords);
 
 		//now we deal with boundaries.
 		foreach(int fprim; foundPrimitives){
@@ -111,17 +110,17 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 			int theseBounds[];	//actual bound #
 			foreach(int tpp; thisprimPoints){
 				int index = find(originals,tpp);
-				if(index!=-1){
+				if(index>-1){
 					push(theseOriginals, index);
 				}
 				index = find(boundaries,tpp);
-				if(index!=-1){
+				if(index>-1){
 					push(theseBounds,tpp);
 				}
 			}
 			//float offset = ucoords[thisOriginal];
 			//float angle = originalAngles[thisOriginal];
-			foreach(int bound; theseBounds){
+			foreach(int seg; int bound; theseBounds){
 				//find closest original
 				vector thisP = point(0,"P",bound);
 				float minDist=9999999;
@@ -134,25 +133,22 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 					}
 				}
 				//find angle and distanceto that closest original
-				vector delta = thisP - originalPositions[closestOriginalIndex];
+				//vector delta = thisP - originalPositions[closestOriginalIndex];
+				vector delta = thisP-originalPositions[closestOriginalIndex];
 				float dist = length(delta);
 				float ang = atan2(delta[2],delta[0]);
 				float refang = originalAngles[closestOriginalIndex];
 				float angCorrected = ang-refang;
+
 				vector newuv = set(
 					cos(angCorrected)*minDist+ucoords[closestOriginalIndex],
-					sin(angCorrected)*minDist
-					);
-				pass = setpointattrib(0,"uv",bound, newuv,"set");
+					sin(angCorrected)*minDist+0.5
+				);
+				int pass2 = setpointattrib(0,"uv", bound, newuv,"set");
+				pass = setpointattrib(0,"Cd",bound, hsvtorgb(set(bound/71.0,1.0,1.0)),"set");
 			}
-			//find angle and distance to that original
-			//write the uv coordinate
+
 		}
-
-
-
-
-
 	}
 
 
