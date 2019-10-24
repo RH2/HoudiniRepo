@@ -1,11 +1,30 @@
+float clampAngle(float inputAngle){
+  float x = inputAngle/3.14159265;
+  x=x%2;
+  if(x>1){
+      x=-1+(x%1);
+  }
+  if(x<-1){
+      x=1+(x%1);
+  }
+  x = x*3.14159265;
+  return x;
+}
+
+float sideCheckXZ(vector s; vector e; vector p){ //+=left
+  float result = (e[0]-s[0])*(p[2]-s[2])  -  (e[2]-s[2])*(p[0]-s[0]);
+  return result;
+}
+
 //To fix the uv's we must first find a distance attribute between original points
 
 //for each prim group "class"
 int currentClass = 0;
+int pass;
 int foundPrimitives[];
 while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, escape when reaching highest class
-	printf("currentClass: %f\\n",currentClass);
-	foundPrimitives={};
+	//printf("currentClass: %f\\n",currentClass);
+	foundPrimitives={}; 	///☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼///
 	//go through all primitives
 	int nprim = nprimitives(0);
 	for(int npim=0; npim<nprim;npim++){  //push all primitives of class x to foundPrimitives
@@ -15,29 +34,127 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 			push(foundPrimitives,npim);
 		}
 	}
-	printf("found: %f\\n",foundPrimitives);
-	int originals[];
-	int boundaries[];	
-	foreach(int fprim; foundPrimitives){ //push all original points to an original array
-		int pointArray[] = primpoints(0,fprim);
-		foreach(int thisPoint; pointArray){
-			int original = inpointgroup(0, "original",thisPoint);//int  inpointgroup(<geometry>geometry, string groupname, int pointnum)
-			if(original==1){
-				if(find(originals, thisPoint)<0){
-					push(originals,thisPoint);					
-				}
-			}else{
-				if(find(boundaries, thisPoint)<0){
-					push(boundaries,thisPoint);					
+	if(len(foundPrimitives)>0){
+		//printf("found: %f\\n",foundPrimitives);
+		int originals[];			///☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼///
+		int boundaries[];			///☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼///
+		foreach(int fprim; foundPrimitives){ //push all original points to an original array
+			int pointArray[] = primpoints(0,fprim);
+			foreach(int thisPoint; pointArray){
+				int original = inpointgroup(0, "original",thisPoint);//int  inpointgroup(<geometry>geometry, string groupname, int pointnum)
+				if(original==1){
+					if(find(originals, thisPoint)<0){
+						push(originals,thisPoint);					
+					}
+				}else{
+					if(find(boundaries, thisPoint)<0){
+						push(boundaries,thisPoint);					
+					}
 				}
 			}
 		}
-	}
-	printf("oringinals: %f\\n",originals);
+		printf("oringinals: %f\\n",originals);
+		vector dir = prim(0,"dir",foundPrimitives[0]);
+		vector p1 = point(0,"P",originals[0]);
+		vector p2 = point(0,"P",originals[-1]);
+		vector dir2 = normalize(p2-p1);
+		float dot = dot(dir,dir2);
+		//printf("dot: %f\\n",dot);
+		if(dot<0){
+			originals = reverse(originals);
+		}
+		//find the distance to root for each orignal, and store
+		//printf("oringinals: %f\\n",originals);
+		float total = 0.0;
+		float ucoords[];
+		float originalAngles[];
+		vector originalPositions[];
+		push(ucoords,total);
+		pass = setpointattrib(0,"Uv",originals[0], set(total,0.5),"set");
+		for(int o=0;o<len(originals);o++){
+			int lastOriginal = originals[o-1];
+			int thisOriginal = originals[o];
+			int nextOriginal = originals[o+1];
+			vector o1 = point(0,"P",lastOriginal);
+			vector o2 = point(0,"P",thisOriginal);
+			vector o3 = point(0,"P",nextOriginal);
+			vector delta = o3-o2;
+			float a = atan2(delta[2],delta[0]);
+			///////////////////////////////////
+			///////////////////////////////////
+			///////////////////////////////////
+			///////////////////////////////////
+			//store location
+			push(originalPositions, o2);
+			//store angle
+			if(o>=len(originals)-1){
+				push(originalAngles,a);
+			}else{//repeat last angle for last point
+				push(originalAngles,originalAngles[-1]);
+			}
+			//store offset
+			if(o!=0){
+				total = total + distance(o1,o2);
+			}
 
-	//original points will be in ascending order, but first and last points are not guaranteed to be orderly.
-	//method 1: find angles to next point, and find ones that are 180° seperated from the mode.
-	//method 2: sort based on vertex values?
+			//set uv coordinate
+			pass = setpointattrib(0,"uv",thisOriginal, set(total,0.5),"set");
+			push(ucoords, total);
+		}
+		printf("ucoord: %f\\n",ucoords);
+
+		//now we deal with boundaries.
+		foreach(int fprim; foundPrimitives){
+			int thisprimPoints[] = primpoints(0,fprim);
+			//find at least one original
+			int theseOriginals[]; //indices to actual original
+			int theseBounds[];	//actual bound #
+			foreach(int tpp; thisprimPoints){
+				int index = find(originals,tpp);
+				if(index!=-1){
+					push(theseOriginals, index);
+				}
+				index = find(boundaries,tpp);
+				if(index!=-1){
+					push(theseBounds,tpp);
+				}
+			}
+			//float offset = ucoords[thisOriginal];
+			//float angle = originalAngles[thisOriginal];
+			foreach(int bound; theseBounds){
+				//find closest original
+				vector thisP = point(0,"P",bound);
+				float minDist=9999999;
+				int closestOriginalIndex =-1;
+				foreach(int origAddress;theseOriginals){
+					float distance = distance(originalPositions[origAddress],thisP);
+					if(distance<minDist){
+						closestOriginalIndex = origAddress;
+						minDist = distance;
+					}
+				}
+				//find angle and distanceto that closest original
+				vector delta = thisP - originalPositions[closestOriginalIndex];
+				float dist = length(delta);
+				float ang = atan2(delta[2],delta[0]);
+				float refang = originalAngles[closestOriginalIndex];
+				float angCorrected = ang-refang;
+				vector newuv = set(
+					cos(angCorrected)*minDist+ucoords[closestOriginalIndex],
+					sin(angCorrected)*minDist
+					);
+				pass = setpointattrib(0,"uv",bound, newuv,"set");
+			}
+			//find angle and distance to that original
+			//write the uv coordinate
+		}
+
+
+
+
+
+	}
+
 
 
 
