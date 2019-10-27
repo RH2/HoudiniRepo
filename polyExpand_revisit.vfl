@@ -51,14 +51,40 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 				}
 			}
 		}
+
+		//find a way to remove junctions from evaluation. 
+		int firstOriginal = 0;
+		int lastOriginal = -1;
+		int originalsReversed[] = reverse(originals);
+		foreach(int originalCheck; originals){ //oci="originalcheckindex"
+			if( inpointgroup(0,"j",originalCheck) ==1){
+				//go to next
+			}else{//not a junction
+				firstOriginal=originalCheck;
+				break;
+			}
+		}
+		foreach (int originalCheck;originalsReversed){
+			if( inpointgroup(0,"j",originalCheck) ==1){
+				//go to next
+			}else{//not a junction
+				lastOriginal=originalCheck;
+				break;
+			}		    
+		}
+
 		vector dir = prim(0,"dir",foundPrimitives[0]);
-		vector p1 = point(0,"P",originals[0]);
-		vector p2 = point(0,"P",originals[-1]);
+		vector p1 = point(0,"P",firstOriginal);
+		vector p2 = point(0,"P",lastOriginal);
 		vector dir2 = normalize(p2-p1);
 		float dot = dot(dir,dir2);
 		if(dot<0){
 			originals = reverse(originals);
 		}
+		//if(currentClass==138){
+		//	printf("originals: %f\\n",originals);
+		//	printf("dir1: %f, dir2: %f, o1: %f, o2: %f, dot: %f\\n", dir,dir2,originals[0],originals[-1],dot);
+		//}
 
 
 
@@ -97,7 +123,7 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 			push(ucoords, total);
 			vector ouv = set(total,0.5);
 			pass = setpointattrib(0,"uv",thisOriginal, ouv,"set");
-			pass = setpointattrib(0,"Cd",thisOriginal, hsvtorgb({0.1,1.0,1.0}),"set");
+			//pass = setpointattrib(0,"Cd",thisOriginal, hsvtorgb({0.1,1.0,1.0}),"set");
 			//vector ouv2 = set(total,0);
 			//pass = setpointattrib(0,"uv",thisOriginal, ouv2,"set");
 		}
@@ -145,7 +171,7 @@ while (len(foundPrimitives)>0||currentClass==0){ //loop through all classes, esc
 					sin(angCorrected)*minDist+0.5
 				);
 				int pass2 = setpointattrib(0,"uv", bound, newuv,"set");
-				pass = setpointattrib(0,"Cd",bound, hsvtorgb(set(bound/71.0,1.0,1.0)),"set");
+				//pass = setpointattrib(0,"Cd",bound, hsvtorgb(set(bound/71.0,1.0,1.0)),"set");
 			}
 
 		}
