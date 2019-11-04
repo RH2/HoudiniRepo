@@ -1,0 +1,47 @@
+int pass;
+int pntPairs[] = expandedgegroup(0,"");
+for(int p=0; p<len(pntPairs);p=p+2){
+    int p1,p2;
+    p1 = pntPairs[p];
+    p2 = pntPairs[p+1];
+    
+    int hedge1 = pointhedge(0, p1, p2);
+    int hedge2 = pointhedge(0, p2, p1);
+    int vert1a = hedge_srcvertex(0,hedge1);
+    int vert1b = hedge_dstvertex(0,hedge1);
+    int vert2a = hedge_srcvertex(0,hedge2);
+    int vert2b = hedge_dstvertex(0,hedge2);
+    
+    //find angle
+    vector n1 = vertex(0,"N",vert1a);
+    vector n2 = vertex(0,"N",vert2a);
+    float angle = acos(dot(n1,n2))*180/3.14159264;
+    
+    //world space midpoint
+    vector pos1 = point(0,"P",p1);
+    vector pos2 = point(0,"P",p2);
+    vector midpos = lerp(pos1,pos2,0.5);
+    
+    //uv midpoints
+    vector uv1,uv2,uv3,uv4;
+    uv1 = vertex(0,"uv",vert1a);
+    uv2 = vertex(0,"uv",vert1b);
+    uv3 = vertex(0,"uv",vert2a);
+    uv4 = vertex(0,"uv",vert2b);
+    vector uvmidpoint1 = lerp(uv1,uv2,0.5);
+    vector uvmidpoint2 = lerp(uv3,uv4,0.5);
+    
+    //create a point with a position, uv, and angle attribute.
+    int newpoint = addpoint(0,midpos);
+    int pass2 = setpointattrib(0,"angle",newpoint,angle,"set");
+    int pline1 = addprim(0,"polyline");
+    int newVertex1 = addvertex(0,pline1,newpoint);
+    pass = setvertexattrib(0,"uv",-1,newVertex1,uvmidpoint1,"set");
+    
+    //create a point with a position, uv, and angle attribute.
+    int newpoint2 = addpoint(0,midpos);
+    int pass3 = setpointattrib(0,"angle",newpoint2,angle,"set");
+    int pline2 = addprim(0,"polyline");
+    int newVertex2 = addvertex(0,pline2,newpoint2);
+    int pass5 = setvertexattrib(0,"uv",-1,newVertex2,uvmidpoint2,"set");  
+}
