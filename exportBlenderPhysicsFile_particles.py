@@ -9,11 +9,11 @@ geo = node.geometry()
 b_id =  1   #id
 b_loc=  1   #location
 b_vel=  1   #velocity
-b_rot=  1   #rotation
-b_rotv= 1   #rotational velocity
+b_rot=  0   #rotation
+b_rotv= 0   #rotational velocity
 b_s=    1   #size
 b_t=    1   #times
-b_b=    1   #boids
+b_b=    0   #boids
 
 framespersecond = 25
 
@@ -93,6 +93,7 @@ outPath = directory+name+extension
 header = pack("8c",'B','P','H','Y','S','I','C','S') #blender physics file!
 header += pack("H",1) #particles only!
 header += pack("H",0) #special flag!
+header += pack("I", len(geo.points()) )#total number of points on the frame
 header += pack("I",outMaskGen(flagArray)) #flag array to unsigned int.
 
 print outPath
