@@ -1,0 +1,58 @@
+//get the roll attribute
+//go through all bones with elbow prefix
+//divide roll from wrist
+//reset wrist
+//add rotation to each bone
+
+int pointsofinterest[];
+int totalpoints = npoints(0);
+
+//find wrist to extract roll from
+int wristpointnum = -1;
+for( int j = 0 ; j < totalpoints ; j++ ){
+    string thisname = point( 1 , "name" , j );
+    if( thisname == "wrist" ){
+        wristpointnum = j ;
+        break;
+    }
+}
+if( wristpointnum == -1 ){
+    printf("no input wrist found");
+}
+float roll = point( 1 , "roll" , wristpointnum );  //GET ROLL FROM SECOND INPUT.
+roll *= -1.5; //fun! (need to fix, this is a stop-gap)
+printf("_START %f\\n",roll);//DEBUG ROLL
+
+
+
+
+
+for( int i = 0 ; i < totalpoints ; i++ ) {
+    //string matching?
+    string nameattribute = point( 0 , "name", i);
+    string nameattributesplits[] = split( nameattribute, "_" );
+
+    //FILTER RESULTS
+    if( len(nameattributesplits)==2 && nameattributesplits[0]=="elbow" && nameattributesplits[1]!="mirror"  ){
+        push( pointsofinterest, i );
+        printf("%s\\n",nameattribute);//DEBUG SHOW NAMES
+    }
+
+}
+
+printf("%f\\n",pointsofinterest);//DEBUG POINT NUMBERS
+float roll_distribute = roll / len(pointsofinterest);
+
+
+
+for( int k = 0 ; k < len(pointsofinterest) ; k++ ){
+
+
+    vector4 newquaternion = eulertoquaternion( set( radians( 0 ) , radians( 0 ) , radians( roll_distribute * k ) ) , 0 );
+    matrix3 rollMatrix = qconvert( newquaternion );
+    matrix rollTransform = set( rollMatrix );
+
+    matrix3 pointtransform = point( 0 , "transform" , pointsofinterest[k] );
+    pointtransform *= rollMatrix;
+    setpointattrib( 0 , "transform" , pointsofinterest[k] , pointtransform , "set" );
+}
