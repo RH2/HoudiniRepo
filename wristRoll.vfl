@@ -20,8 +20,6 @@ if( wristpointnum == -1 ){
     printf("no input wrist found");
 }
 float roll = point( 1 , "roll" , wristpointnum );  //GET ROLL FROM SECOND INPUT.
-roll *= -1.5; //fun! (need to fix, this is a stop-gap)
-printf("_START %f\\n",roll);//DEBUG ROLL
 
 
 
@@ -35,12 +33,10 @@ for( int i = 0 ; i < totalpoints ; i++ ) {
     //FILTER RESULTS
     if( len(nameattributesplits)==2 && nameattributesplits[0]=="elbow" && nameattributesplits[1]!="mirror"  ){
         push( pointsofinterest, i );
-        printf("%s\\n",nameattribute);//DEBUG SHOW NAMES
     }
 
 }
 
-printf("%f\\n",pointsofinterest);//DEBUG POINT NUMBERS
 float roll_distribute = roll / len(pointsofinterest);
 
 
