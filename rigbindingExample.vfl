@@ -1,0 +1,109 @@
+string bonenames[] = detail( 0 , "boneCapture_pCaptPath");
+int jointnum = find( bonenames , "foot" );
+
+
+void SBC( int var_primitive ,  var_index ){
+    int captureArray[];
+    append( captureArray , var_index);
+    int indicies[];
+    push( indicies, var_index );
+    int primitivepoints[] = primpoints( 0 , var_primitive );
+    for( int i = 0 ; i < len(primitivepoints); i++ ) {
+        setpointattrib( 0 , "boneCapture_data", primitivepoints[i] , 1.0 , "set" );
+        setpointattrib( 0 , "boneCapture_index", primitivepoints[i] , var_index , "set" );
+        setpointattrib( 0 , "Cd", primitivepoints[i] , set(1.0,0.0,1.0) , "set" );
+    }
+}
+
+void SBC2( string str_bones[]; string var_string ; int var_primitive ){
+    int foundIndex = find( str_bones , var_string );
+    int primitivepoints[] = primpoints( 0 , var_primitive );
+    for( int i = 0 ; i < len(primitivepoints); i++ ) {
+        setpointattrib( 0 , "boneCapture_data", primitivepoints[i] , 1.0 , "set" );
+        setpointattrib( 0 , "boneCapture_index", primitivepoints[i] , foundIndex , "set" );
+        setpointattrib( 0 , "Cd", primitivepoints[i] , set(1.0,0.0,1.0) , "set" );
+    }
+}
+
+
+
+
+
+
+//if(@primnum==0){ printf("%s, found: %i",names,jointnum); }
+
+
+int NUM = @primnum ;
+string NAME = @name;
+int MIRROR = @group_mirror;
+
+//arms
+if( NAME == "Cube.011" ){
+    SBC( NUM , 0 );
+
+}
+if( NAME == "shoulder_roll" ){
+    if( MIRROR==0 ) {
+    SBC( NUM , 23 );
+    }
+    if( MIRROR==1 ) {
+    SBC( NUM , 47 );
+    }
+}
+
+//legs
+if( NAME == "feet" ){
+    if( MIRROR==0 ) {
+    SBC( NUM , 22 );
+    }
+    if( MIRROR==1 ) {
+    SBC( NUM , 47 );
+    }
+}
+if( NAME == "Cube.020" ){
+    if( MIRROR==0 ) {
+    SBC( NUM , 21 );
+    }
+    if( MIRROR==1 ) {
+    SBC( NUM , 46 );
+    }
+}
+if( NAME == "Cube.014" ){
+    if( MIRROR==0 ) {
+    SBC( NUM , 20 );
+    }
+    if( MIRROR==1 ) {
+    SBC( NUM , 45 );
+    }
+}
+if( NAME == "Cube.021" ){
+    if( MIRROR==0 ) {
+    SBC( NUM , 19 );
+    }
+    if( MIRROR==1 ) {
+    SBC( NUM , 44 );
+    }
+}
+
+//central body
+if( NAME == "shellback1" ){
+    SBC( NUM , 0 );
+}
+if( NAME == "shellback2" ){
+    SBC( NUM , 0 );
+}
+if( NAME == "shellback3" ){
+    SBC( NUM , 0 );
+}
+if( NAME == "shellback4" ){
+    SBC( NUM , 0 );
+}
+if( NAME == "Mesh0" ){
+    SBC( NUM , 0 );
+}
+if( NAME == "shell_parts" ){
+    SBC( NUM , 0 );
+}
+if( NAME == "kneebrace" ){
+    SBC( NUM , 0 );
+}
