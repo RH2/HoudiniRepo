@@ -1,7 +1,6 @@
 string bonenames[] = detail( 0 , "boneCapture_pCaptPath");
 int jointnum = find( bonenames , "foot" );
 
-
 void SBC( int var_primitive ,  var_index ){
     int captureArray[];
     append( captureArray , var_index);
@@ -15,95 +14,80 @@ void SBC( int var_primitive ,  var_index ){
     }
 }
 
-void SBC2( string str_bones[]; string var_string ; int var_primitive ){
-    int foundIndex = find( str_bones , var_string );
+void SBC2( string str_bones[]; string var_string ; int var_primitive, mirror){
+    int foundIndex;
+    if( mirror==0){
+        foundIndex = find( str_bones , var_string );
+    }
+    if( mirror==1 ){
+       foundIndex = find( str_bones , "mirror_"+var_string );
+    }
     int primitivepoints[] = primpoints( 0 , var_primitive );
     for( int i = 0 ; i < len(primitivepoints); i++ ) {
         setpointattrib( 0 , "boneCapture_data", primitivepoints[i] , 1.0 , "set" );
         setpointattrib( 0 , "boneCapture_index", primitivepoints[i] , foundIndex , "set" );
-        setpointattrib( 0 , "Cd", primitivepoints[i] , set(1.0,0.0,1.0) , "set" );
+        //setpointattrib( 0 , "Cd", primitivepoints[i] , set(1.0,0.0,1.0) , "set" );
     }
 }
-
-
-
-
-
-
-//if(@primnum==0){ printf("%s, found: %i",names,jointnum); }
 
 
 int NUM = @primnum ;
 string NAME = @name;
 int MIRROR = @group_mirror;
 
-//arms
-if( NAME == "Cube.011" ){
-    SBC( NUM , 0 );
 
-}
-if( NAME == "shoulder_roll" ){
-    if( MIRROR==0 ) {
-    SBC( NUM , 23 );
-    }
-    if( MIRROR==1 ) {
-    SBC( NUM , 47 );
-    }
-}
-
-//legs
 if( NAME == "feet" ){
-    if( MIRROR==0 ) {
-    SBC( NUM , 22 );
-    }
-    if( MIRROR==1 ) {
-    SBC( NUM , 47 );
-    }
+    SBC2( bonenames , "foot", NUM, MIRROR );
 }
 if( NAME == "Cube.020" ){
-    if( MIRROR==0 ) {
-    SBC( NUM , 21 );
-    }
-    if( MIRROR==1 ) {
-    SBC( NUM , 46 );
-    }
+    SBC2( bonenames , "knee", NUM, MIRROR );
 }
 if( NAME == "Cube.014" ){
-    if( MIRROR==0 ) {
-    SBC( NUM , 20 );
-    }
-    if( MIRROR==1 ) {
-    SBC( NUM , 45 );
-    }
+    SBC2( bonenames , "hip_pivot2", NUM, MIRROR );
 }
 if( NAME == "Cube.021" ){
-    if( MIRROR==0 ) {
-    SBC( NUM , 19 );
-    }
-    if( MIRROR==1 ) {
-    SBC( NUM , 44 );
-    }
-}
-
-//central body
-if( NAME == "shellback1" ){
-    SBC( NUM , 0 );
-}
-if( NAME == "shellback2" ){
-    SBC( NUM , 0 );
-}
-if( NAME == "shellback3" ){
-    SBC( NUM , 0 );
-}
-if( NAME == "shellback4" ){
-    SBC( NUM , 0 );
+    SBC2( bonenames , "hip_pivot1", NUM, MIRROR );
 }
 if( NAME == "Mesh0" ){
-    SBC( NUM , 0 );
+    SBC2( bonenames , "hip", NUM, MIRROR );
 }
-if( NAME == "shell_parts" ){
-    SBC( NUM , 0 );
+
+
+if( NAME == "shellback1" || NAME == "shellback2" || NAME == "shellback3" || NAME == "shellback4"){
+    SBC2( bonenames , "hip", NUM, MIRROR );
 }
 if( NAME == "kneebrace" ){
-    SBC( NUM , 0 );
+    SBC2( bonenames , "hip", NUM, MIRROR );
+}
+if( NAME == "shell_parts" ){
+    SBC2( bonenames , "hip", NUM, MIRROR );
+}
+
+
+if( NAME == "Cube.011" ){
+    SBC2( bonenames , "hip", NUM, MIRROR );
+}
+if( NAME == "shoulder_roll" ){
+    SBC2( bonenames , "arm_roll", NUM, MIRROR );
+}
+if( NAME == "shoulder_pitch" || NAME == "upperarm"  ){
+    SBC2( bonenames , "shoulder", NUM, MIRROR );
+}
+if( NAME == "elbow_roll" || NAME == "upperarm"  ){
+    SBC2( bonenames , "elbow_pitch", NUM, MIRROR );
+}
+if( NAME == "elbow_slide" || NAME == "upperarm"  ){
+    SBC2( bonenames , "elbow_roll", NUM, MIRROR );
+}
+if( NAME == "wrist_slide" || NAME == "upperarm"  ){
+    SBC2( bonenames , "linearmotion2", NUM, MIRROR );
+}
+if( NAME == "wrist_pitch" || NAME == "upperarm"  ){
+    SBC2( bonenames , "wristpitch", NUM, MIRROR );
+}
+if( NAME == "wrist_roll" || NAME == "upperarm"  ){
+    SBC2( bonenames , "wristroll", NUM, MIRROR );
+}
+if( NAME == "fingers.001" || NAME == "upperarm"  ){
+    SBC2( bonenames , "fingers_base", NUM, MIRROR );
 }
