@@ -48,19 +48,21 @@ if( NAME == "Cube.014" ){
 if( NAME == "Cube.021" ){
     SBC2( bonenames , "hip_pivot1", NUM, MIRROR );
 }
+
+
 if( NAME == "Mesh0" ){
-    SBC2( bonenames , "hip", NUM, MIRROR );
+    SBC2( bonenames , "hip", NUM, 0 );
 }
 
 
 if( NAME == "shellback1" || NAME == "shellback2" || NAME == "shellback3" || NAME == "shellback4"){
-    SBC2( bonenames , "hip", NUM, MIRROR );
+    SBC2( bonenames , "hip", NUM, 0 );
 }
 if( NAME == "kneebrace" ){
-    SBC2( bonenames , "hip", NUM, MIRROR );
+    SBC2( bonenames , "hip", NUM, 0 );
 }
 if( NAME == "shell_parts" ){
-    SBC2( bonenames , "hip", NUM, MIRROR );
+    SBC2( bonenames , "hip", NUM, 0 );
 }
 
 
@@ -70,24 +72,28 @@ if( NAME == "Cube.011" ){
 if( NAME == "shoulder_roll" ){
     SBC2( bonenames , "arm_roll", NUM, MIRROR );
 }
-if( NAME == "shoulder_pitch" || NAME == "upperarm"  ){
+if( NAME == "shoulder_pitch"  ){
     SBC2( bonenames , "shoulder", NUM, MIRROR );
 }
 if( NAME == "elbow_roll" || NAME == "upperarm"  ){
     SBC2( bonenames , "elbow_pitch", NUM, MIRROR );
 }
-if( NAME == "elbow_slide" || NAME == "upperarm"  ){
+if( NAME == "elbow_slide"   ){
     SBC2( bonenames , "elbow_roll", NUM, MIRROR );
 }
-if( NAME == "wrist_slide" || NAME == "upperarm"  ){
+if( NAME == "wrist_slide"   ){
     SBC2( bonenames , "linearmotion2", NUM, MIRROR );
 }
-if( NAME == "wrist_pitch" || NAME == "upperarm"  ){
+if( NAME == "wrist_pitch"   ){
     SBC2( bonenames , "wristpitch", NUM, MIRROR );
 }
-if( NAME == "wrist_roll" || NAME == "upperarm"  ){
+if( NAME == "wrist_roll"   ){
     SBC2( bonenames , "wristroll", NUM, MIRROR );
 }
-if( NAME == "fingers.001" || NAME == "upperarm"  ){
+if( NAME == "fingers.001" ){
     SBC2( bonenames , "fingers_base", NUM, MIRROR );
+}
+
+if( NAME == "upperarm" ){
+    SBC2( bonenames , "shoulder", NUM, MIRROR );
 }
