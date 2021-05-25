@@ -1,0 +1,70 @@
+//The idea behind this script is that a point with the same class and position will contain the correct data.
+//results do no align with this vision.
+
+int thispt = @ptnum;
+int thisprims[] = pointprims( 0 , thispt);
+int class= prim( 0 , "class" , thisprims[0] );
+float p1 = @P;
+
+//go through all ch1 primitives and return array of all prims with same class;
+int nprims1 = nprimitives(1);
+int prims1_sameclass[] = {};
+int ch1_interesting_points[] = {};
+for( int np = 0 ; np < nprims1 ; np++ ){
+  //get primitive class
+  np_class = prim( 1, "class", np);
+  if( np_class == class){
+    push( prims1_sameclass , np );
+  }
+}
+
+//now we append to an array of all points from those primitives.
+foreach( int similarPrim ; prims1_sameclass ){
+  //get points and append.
+  int thisprimpoints[] = primpoints( 1, similarPrim );
+  append( ch1_interesting_points , this[])
+}
+//now we go through all points.
+//once a match is made, an overwrite is made.
+foreach( int pntindex ; ch1_interesting_points ){
+  //distance check
+    vector p2 = point( 1 , "P" , pntindex);
+    float distcheck = distance( p1, p2 );
+    if( distcheck < 0.1 ){
+      //overwrite and break.
+      float d2 = point( 1 , "distance" , pntindex);
+      float a2 = point( 1 , "angle" , pntindex);
+      @distance = d2;
+      @angle = a2
+      break;
+    }
+}
+
+
+
+
+
+/*
+if( @group_original == 1 ){
+    //copy distance and angle from point with same location
+    //need to filter by class too!
+    int ch1points = npoints(1);
+    for( int i = 0 ; i < ch1points ; i++ ) {
+        //get class
+        int ch1prims[] = pointprims( 1, i);
+        int otherclass = prim( 1, "class" , ch1prims[0] );
+
+
+        vector p = @P;
+        vector p2 = point( 1, "P" , i );
+        float dif = distance( p , p2 );
+        if( dif < .1 && class==otherclass ){
+            //printf("this: %i,other: %i",class,otherclass);
+            float d = point( 1, "distance" , i );
+            float a = point( 1, "angle" , i );
+            @distance = d;
+            @angle = a;
+        }
+    }
+}
+*/
