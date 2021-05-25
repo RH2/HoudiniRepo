@@ -1,0 +1,42 @@
+//the idea is to walk each half edge in the primitive.
+//if one of the points in the half edge is an original
+//the other point inherits the attributes from it.
+
+int start_he = primhedge( 0 , @primnum);
+int next_he = start_he;
+int match = 0;
+while( match == 0 ){
+    //analyze next_he
+    int start_pnt = hedge_srcpoint( 0 , next_he );
+    int destination_pnt = hedge_dstpoint( 0 , next_he);
+    int s_o = inpointgroup( 0 , "original" , start_pnt );
+    int d_o = inpointgroup( 0 , "original" , destination_pnt );
+    if( s_o != d_o ){ //make sure only one has authority AKA if both are originals, do nothing
+        if( s_o == 1 ){
+            //printf("source match\n");
+            //set start point attributes to destination attributes
+            setpointattrib( 0 , "Cd" , start_pnt , hsvtorgb( 0.0 ,1.0,1.0) , "set" );
+            setpointattrib( 0 , "Cd" , destination_pnt , hsvtorgb( 0.2,1.0,1.0) , "set" );
+            float d1 = point( 0 , "distance" , start_pnt );
+            float a1 = point( 0 , "angle" , start_pnt );
+            setpointattrib( 0 , "distance", destination_pnt , d1 , "set" );
+            setpointattrib( 0 , "angle", destination_pnt , a1 , "set" );
+        }
+        if( d_o == 1 ){
+            //printf("dest match\n");
+            //set destination point attributes to start attributes
+            setpointattrib( 0 , "Cd" , start_pnt , hsvtorgb( 0.5 ,1.0,1.0) , "set" );
+            setpointattrib( 0 , "Cd" , destination_pnt , hsvtorgb( 0.7,1.0,1.0) , "set" );
+            float d2 = point( 0 , "distance" , destination_pnt );
+            float a2 = point( 0 , "angle" , destination_pnt );
+            setpointattrib( 0 , "distance", start_pnt , d2 , "set" );
+            setpointattrib( 0 , "angle", start_pnt , a2 , "set" );
+        }
+    }
+    next_he = hedge_next( 0 , next_he);
+    //printf( "start_he: %i, next_he: %i\n" , start_he, next_he );
+    //int validCheck = hedge_isvalid( 0 , next_he );
+    if( next_he == start_he ){ //exit clause
+        match = 1;
+    }
+}
