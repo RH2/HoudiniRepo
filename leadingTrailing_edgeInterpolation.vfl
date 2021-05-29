@@ -1,6 +1,6 @@
 int Debug_Print = 0;
 //with the array of all points in the primitive, we find the first leading edge.
-int allpoints[] = primpoints(0,@ptnum);
+int allpoints[] = primpoints(0,@primnum);
 int allpoints_nc[];
 int donepoints[];
 foreach( int ap ; allpoints){
