@@ -1,0 +1,43 @@
+int frame = int( @Frame );
+int startingframe = 800;
+
+
+
+vector positions_array[] = {};
+for( int k = 0; k < npoints(1) ; k++ ){
+    vector pospos = point(1,"P",k);
+    append( positions_array , pospos );
+}
+
+vector currentvelocity = set(0,1,0);
+vector lastp = point( 0 , "P", 0 );
+int lastpnt = -1;
+int iterations = 100;
+for( int i = @Frame-iterations ; i < @Frame ; i++ ){
+    //NOISE
+    //float progress = pow(i/300.0 , .1 ) ;
+    //float rfloat = rand(i);
+    //vector n = onoise( rfloat );
+
+
+    vector distance =  positions_array[i] - lastp;
+    vector lookat = normalize(distance);
+    currentvelocity = lerp( currentvelocity , lookat*4, 0.1 );
+
+
+    int path = addpoint( 0 , lastp + (currentvelocity) );
+    lastp = lastp + currentvelocity;
+
+    //show source targets
+    vector p2 = positions_array[i];
+    int g = addpoint( 0 , p2 );
+    setpointattrib(0,"Cd", g, set(0,0.3,0) );
+    int poly = addprim(0, "polyline", path, g);
+
+    //connect the path
+    if(lastpnt!=-1){
+        int pathprim = addprim(0, "polyline", path ,lastpnt);
+    }
+    lastpnt =path;
+
+}
