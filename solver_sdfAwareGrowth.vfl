@@ -1,0 +1,32 @@
+int pts[] = primpoints(0, @primnum);
+//      printf("list: %f ---\n",pts);/////
+//get last point in primitive.
+int lp = pts[len(pts)-1];
+vector pos1 = point(0,"P", lp);
+//      printf("pos1: %f\n",pos1);/////
+vector pos2;
+
+//if point has previous point, get vector.
+vector v = {0,0,0};
+if( len(pts)-2 >= 0 ) {
+    int lp2 = pts[len(pts)-2];
+    pos2 = point(0,"P", lp2);
+    //      printf("%f\n",pos2);/////
+    v = normalize(pos1 - pos2) *0.1;
+}
+else{
+    //      printf("tooshort!");/////
+    v = point(0,"N",lp);
+}
+//move point along vector.
+vector g = {0, -0.01 , 0 };
+vector newpos = pos1 + (v*0.1) +g;
+//test to see if point is inside sdf (signed distance field).
+vector gradientResult = volumesamplev(1,"grad",pos1);
+//      printf("%f\n", gradientResult );/////
+//move point out of sdf.
+newpos += gradientResult/100.0;
+
+int extension = addpoint(0, newpos);
+//int newseg = addprim( 0,"polyline", lp, extension);
+int vert = addvertex(0, @primnum, extension);
