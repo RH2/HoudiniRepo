@@ -8,10 +8,36 @@ int grid[] = {0,8,6,0,7,1,0,0,2,
               2,7,0,3,0,6,0,4,0,
               0,0,4,0,0,0,3,1,6,};
 
-
-int rp[]= {0,0,0,0,0,0,0,0,0}; //row possibility   (final size 9x9x9)
-int cp[]= {0,0,0,0,0,0,0,0,0}; //column possibility
-int lp[]= {0,0,0,0,0,0,0,0,0}; //cell possibility
+//row possibility
+int rp[]= {0,0,0,0,0,0,0,0,0
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0};
+//column possibility
+int cp[]= {0,0,0,0,0,0,0,0,0
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0};
+//cell possibility
+int lp[]= {0,0,0,0,0,0,0,0,0
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0,
+           0,0,0,0,0,0,0,0,0};
 
 int total = len(grid);
 //printf("grid: %f, %f",grid,total);
@@ -30,7 +56,6 @@ void drawGridProgress(int g[];float z){
 }
 
 
-
 void populatePossibility_row(int g[];int out[]){ //outputs an array of 9 numbers.
     for(int x=0;x<9;x++){ //each address has 9 possible values use bit storage per item.
         int sum = 0;
@@ -38,18 +63,23 @@ void populatePossibility_row(int g[];int out[]){ //outputs an array of 9 numbers
            int pass = find(g, y, x*9, x*9+9);
            if(pass<0){ //if not found
             printf("%f",y);
-            sum += pow(y,2);
+            sum += pow(y,2); //binary flags
            }
         }
         out[x] = sum;;
         printf("-------\n");
     }
     printf("%f", out);
+
+    bitxor(
 }
+
+
+
 
 //draw initial state.
 drawGridProgress(grid,0);
-populatePossibility_row(grid,rp);
+populatePossibility_row_v2(grid,rp);
 
 //sets and deduction ----------------
 //set 1,2,3 for each item we create list of row, column, and cell possibilities.
