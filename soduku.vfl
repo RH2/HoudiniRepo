@@ -138,7 +138,28 @@ void drawPossibility_col(int g[]){
       }
 
     }
-
+}
+void populatePossibility_cell(int g[];int out[]){
+    for(int c=0;c<3;c++){ //3 vertical columns
+        for(int r=0;r<3;r++){// 3 horizontal rows
+            //create cell array
+            int cell[] = {};
+            for(int v=0;v<3;v++){
+                for(int h=0;h<3;h++){
+                    push(cell, g[ h + (v*9) + (c*27) + (r*3) ]);
+                }
+            }
+            //after our [9] array is created, check for each number.
+            printf("cell: %f\n",cell);
+            for(int y=1;y<10;y++){
+                int pass = find(cell, y);
+                if(pass<0){ //if not found
+                    out[y-1  +(c*9)+(r*27)]=1;
+                }
+            }
+        }
+    }
+printf("%f \n+++\n", out);
 }
 
 
@@ -148,8 +169,10 @@ void drawPossibility_col(int g[]){
 drawGridProgress(grid,0);
 populatePossibility_row(grid,rp);
 populatePossibility_col(grid,cp);
+populatePossibility_cell(grid,lp);
 drawPossibility_row(rp);
 drawPossibility_col(cp);
+
 
 //sets and deduction ----------------
 //set 1,2,3 for each item we create list of row, column, and cell possibilities.
