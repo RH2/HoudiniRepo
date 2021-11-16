@@ -8,8 +8,19 @@ int grid[] = {0,8,6,0,7,1,0,0,2,
               2,7,0,3,0,6,0,4,0,
               0,0,4,0,0,0,3,1,6,};
 
+
+int emptymatrix[] = {0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0,
+                   0,0,0,0,0,0,0,0,0};
+
 //row possibility
-int rp[]= {0,0,0,0,0,0,0,0,0
+int rp[]= {0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
@@ -19,7 +30,7 @@ int rp[]= {0,0,0,0,0,0,0,0,0
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0};
 //column possibility
-int cp[]= {0,0,0,0,0,0,0,0,0
+int cp[]= {0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
@@ -29,7 +40,7 @@ int cp[]= {0,0,0,0,0,0,0,0,0
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0};
 //cell possibility
-int lp[]= {0,0,0,0,0,0,0,0,0
+int lp[]= {0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
@@ -56,22 +67,78 @@ void drawGridProgress(int g[];float z){
 }
 
 
-void populatePossibility_row(int g[];int out[]){ //outputs an array of 9 numbers.
-    for(int x=0;x<9;x++){ //each address has 9 possible values use bit storage per item.
-        int sum = 0;
+void populatePossibility_row(int g[];int out[]){
+    for(int x=0;x<9;x++){
         for(int y=1;y<10;y++){
            int pass = find(g, y, x*9, x*9+9);
            if(pass<0){ //if not found
-            printf("%f",y);
-            sum += pow(y,2); //binary flags
+            //printf("%f",y);
+            out[(x*9)+y-1]=1;
            }
         }
-        out[x] = sum;;
-        printf("-------\n");
     }
-    printf("%f", out);
+    printf("%f \n----\n", out);
+}
 
-    bitxor(
+void drawPossibility_row(int g[]){
+    for(int i=0;i<len(g);i++){
+      vector xp = (i%9.0)/9;
+      vector yp = i/9;
+      vector x2 = -1.5;
+      vector y2 = 0;
+      if(g[i]==1){
+          int np = addpoint(0,set(xp+x2,0,yp+y2));
+          setpointattrib(0,"Cd",np,set(1,01,0),"set");
+          setpointattrib(0,"Value",np,int(g[i]),"set");
+      }
+      else{
+          int np = addpoint(0,set(xp+x2,0,yp+y2));
+          setpointattrib(0,"Cd",np,set(0.1,0.1,0),"set");
+          setpointattrib(0,"Value",np,int(g[i]),"set");
+      }
+
+    }
+
+}
+
+
+
+void populatePossibility_col(int g[];int out[]){
+    for(int x=0;x<9;x++){
+        //create column array
+        int col[];
+        for(int c=0;c<9;c++){
+            push(col, g[(c*9)+x]);
+        }
+        for(int y=1;y<10;y++){
+           int pass = find(col, y);
+           if(pass<0){ //if not found
+            //printf("%f",y);
+            out[(x*9)+y-1]=1;
+           }
+        }
+    }
+    printf("%f \n----\n", out);
+}
+void drawPossibility_col(int g[]){
+    for(int i=0;i<len(g);i++){
+      vector xp = i/9;
+      vector yp = (i%9.0)/9;
+      vector x2 = 0;
+      vector y2 = -1.5;
+      if(g[i]==1){
+          int np = addpoint(0,set(xp+x2,0,yp+y2));
+          setpointattrib(0,"Cd",np,set(0,01,1),"set");
+          setpointattrib(0,"Value",np,int(g[i]),"set");
+      }
+      else{
+          int np = addpoint(0,set(xp+x2,0,yp+y2));
+          setpointattrib(0,"Cd",np,set(0,0.1,0.1),"set");
+          setpointattrib(0,"Value",np,int(g[i]),"set");
+      }
+
+    }
+
 }
 
 
@@ -79,7 +146,10 @@ void populatePossibility_row(int g[];int out[]){ //outputs an array of 9 numbers
 
 //draw initial state.
 drawGridProgress(grid,0);
-populatePossibility_row_v2(grid,rp);
+populatePossibility_row(grid,rp);
+populatePossibility_col(grid,cp);
+drawPossibility_row(rp);
+drawPossibility_col(cp);
 
 //sets and deduction ----------------
 //set 1,2,3 for each item we create list of row, column, and cell possibilities.
