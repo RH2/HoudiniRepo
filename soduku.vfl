@@ -7,8 +7,6 @@ int grid[] = {0,8,6,0,7,1,0,0,2,
               0,1,3,0,0,0,0,5,0,
               2,7,0,3,0,6,0,4,0,
               0,0,4,0,0,0,3,1,6,};
-
-
 int emptymatrix[] = {0,0,0,0,0,0,0,0,0,
                    0,0,0,0,0,0,0,0,0,
                    0,0,0,0,0,0,0,0,0,
@@ -18,7 +16,6 @@ int emptymatrix[] = {0,0,0,0,0,0,0,0,0,
                    0,0,0,0,0,0,0,0,0,
                    0,0,0,0,0,0,0,0,0,
                    0,0,0,0,0,0,0,0,0};
-
 //row possibility
 int rp[]= {0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
@@ -49,10 +46,9 @@ int lp[]= {0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0,
            0,0,0,0,0,0,0,0,0};
-
-int total = len(grid);
+int reduce[] = {};
+//int total = len(grid);
 //printf("grid: %f, %f",grid,total);
-
 //for each iteration, create snapshot geometry
 void drawGridProgress(int g[];float z){
     for(int i=0;i<len(g);i++){
@@ -65,8 +61,6 @@ void drawGridProgress(int g[];float z){
      }
     }
 }
-
-
 void populatePossibility_row(int g[];int out[]){
     for(int x=0;x<9;x++){
         for(int y=1;y<10;y++){
@@ -77,9 +71,8 @@ void populatePossibility_row(int g[];int out[]){
            }
         }
     }
-    printf("%f \n----\n", out);
+    //printf("%f \n----\n", out);
 }
-
 void drawPossibility_row(int g[]){
     for(int i=0;i<len(g);i++){
       vector xp = (i%9.0)/9;
@@ -88,7 +81,7 @@ void drawPossibility_row(int g[]){
       vector y2 = 0;
       if(g[i]==1){
           int np = addpoint(0,set(xp+x2,0,yp+y2));
-          setpointattrib(0,"Cd",np,set(1,01,0),"set");
+          setpointattrib(0,"Cd",np,set(1.0,1.0,0),"set");
           setpointattrib(0,"Value",np,int(g[i]),"set");
       }
       else{
@@ -100,9 +93,6 @@ void drawPossibility_row(int g[]){
     }
 
 }
-
-
-
 void populatePossibility_col(int g[];int out[]){
     for(int x=0;x<9;x++){
         //create column array
@@ -118,7 +108,7 @@ void populatePossibility_col(int g[];int out[]){
            }
         }
     }
-    printf("%f \n----\n", out);
+    //printf("%f \n----\n", out);
 }
 void drawPossibility_col(int g[]){
     for(int i=0;i<len(g);i++){
@@ -150,7 +140,7 @@ void populatePossibility_cell(int g[];int out[]){
                 }
             }
             //after our [9] array is created, check for each number.
-            printf("cell: %f\n",cell);
+            //printf("cell: %f\n",cell);
             for(int y=1;y<10;y++){
                 int pass = find(cell, y);
                 if(pass<0){ //if not found
@@ -159,11 +149,52 @@ void populatePossibility_cell(int g[];int out[]){
             }
         }
     }
-printf("%f \n+++\n", out);
+//printf("out:\n%f\n+++\n", out);
 }
+void populatePossibility_item(int g[];int row[]; int col[]; int cell[]; int out[]){
+    int totals[] = {};
+    //now we calculate a 81*9 matrix, by scanning and reducing all possibility matricies.
+    for(int i=0; i < len(g);i++){//for each item
+       int total = 0;
+       if(g[i]==0){ //only process the cells that need it
+           int rowid = i/9;
+           int colid = i%9;
+           //int cellid = (i%27/9)+(i/27*3);//old
+           int cellid = i/27*3 + i/3 -3*(i/9);//new
+
+           //AND sets
+           for(int n =0; n<9; n++){
+            int result = row[rowid+n]*col[colid+n]*cell[cellid+n];
+            total+= result;
+            push(out, result); //out tracks number of possibilities.
+            //printf("t%f - ",result);
+           }
+        }
+        else{
+            for(int n =0; n<9; n++){
+                push(out, int(9));
+                total=0;
+            }
+        }
+        /*
+        if(total==1){//update index
+            g[i]= find(out, 1, i*9,(i*9)+9)%9;
+        }*/
 
 
+        push(totals,total);
+    }
+        for(int item=0; item<81;item++){
+         int array[]={};
+            for(int read=0; read<9;read++){
+                push(array,out[read+item*9]);
 
+            }
+            printf("%f, t:%f, %f\n",item,totals[item],array);
+        }
+
+        //printf("totals: \n%f\n*-*-*-\n",totals);
+}
 
 //draw initial state.
 drawGridProgress(grid,0);
@@ -172,6 +203,8 @@ populatePossibility_col(grid,cp);
 populatePossibility_cell(grid,lp);
 drawPossibility_row(rp);
 drawPossibility_col(cp);
+populatePossibility_item(grid,rp,cp,lp,reduce);
+printf("grid: \n%f\n",grid);
 
 
 //sets and deduction ----------------
