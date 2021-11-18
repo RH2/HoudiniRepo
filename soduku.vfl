@@ -55,7 +55,7 @@ void drawGridProgress(int g[];float z){
      if(g[i]!=0){
       float x = i%9;
       float y = int(i/9);
-      int np = addpoint(0,set(x,0,y));
+      int np = addpoint(0,set(x,z,y));
       setpointattrib(0,"Cd",np,set(0,1,0),"set");
       setpointattrib(0,"Value",np,int(g[i]),"set");
      }
@@ -73,14 +73,14 @@ void populatePossibility_row(int g[];int out[]){
     }
     //printf("%f \n----\n", out);
 }
-void drawPossibility_row(int g[]){
+void drawPossibility_row(float z; int g[]){
     for(int i=0;i<len(g);i++){
       vector xp = (i%9.0)/9;
       vector yp = i/9;
       vector x2 = -1.5;
       vector y2 = 0;
       if(g[i]==1){
-          int np = addpoint(0,set(xp+x2,0,yp+y2));
+          int np = addpoint(0,set(xp+x2,z,yp+y2));
           setpointattrib(0,"Cd",np,set(1.0,1.0,0),"set");
           setpointattrib(0,"Value",np,int(g[i]),"set");
       }
@@ -110,14 +110,14 @@ void populatePossibility_col(int g[];int out[]){
     }
     //printf("%f \n----\n", out);
 }
-void drawPossibility_col(int g[]){
+void drawPossibility_col(float z;int g[]){
     for(int i=0;i<len(g);i++){
       vector xp = i/9;
       vector yp = (i%9.0)/9;
       vector x2 = 0;
       vector y2 = -1.5;
       if(g[i]==1){
-          int np = addpoint(0,set(xp+x2,0,yp+y2));
+          int np = addpoint(0,set(xp+x2,z,yp+y2));
           setpointattrib(0,"Cd",np,set(0,01,1),"set");
           setpointattrib(0,"Value",np,int(g[i]),"set");
       }
@@ -159,59 +159,59 @@ void populatePossibility_cell(int g[];int out[]){
     out= array;
 //printf("out:\n%f\n+++\n", out);
 }
-void populatePossibility_item(int g[];int row[]; int col[]; int cell[]; int out[]){
+void populatePossibility_item(float z; int g[];int row[]; int col[]; int cell[]; int out[]){
     int totals[] = {};
     //now we calculate a 81*9 matrix, by scanning and reducing all possibility matricies.
     for(int i=0; i < len(g);i++){//for each item
-       int total = 0;
        if(g[i]==0){ //only process the cells that need it
+           int only = 0;
+           int total = 0;
+
            int rowid = i/9;
            int colid = i%9;
-           //int cellid = (i%27/9)+(i/27*3);//old
-           int cellid = i/27*3 + i/3 -3*(i/9);//new
-
+           int cellid = i/27*3 + i/3 -3*(i/9);
            //AND sets
            for(int n =0; n<9; n++){
             int result = row[rowid*9+n]*col[colid*9+n]*cell[cellid*9+n];
 
-
-           //ADD POINTs
-
-             int np2 = addpoint(0,set(colid+ (n%3/20.0), 0, rowid + (n/3)/20.0));
-             int r = result*(n+1);
-             if(result>0){
-             setpointattrib(0,"Cd",np2,set(1.0,1.0,0),"set");
-             }
-             else{
-             setpointattrib(0,"Cd",np2,set(1.0,0,0),"set");
-             }
-             setpointattrib(0,"Value",np2,int(r),"set");
-
-            total+= result;
-            push(out, result);
-
-
+           int drawpoints = 0;
+           if(drawpoints==1){
+               //ADD POINTs
+                int np2 = addpoint(0,set(colid+ (n%3/20.0), z, rowid + (n/3)/20.0));
+                int r = result*(n+1);
+                if(result>0){
+                  setpointattrib(0,"Cd",np2,set(1.0,1,0),"set");
+                  only = n+1;
+                }
+                else{
+                  setpointattrib(0,"Cd",np2,set(1.0,0,0),"set");
+                }
+            }else{
+                if(result>0){
+                  only = n+1;
+                }
+                total+= result;
+            }
            }
 
 
 
 
+           if(total==1){ //only if one possibility, update original grid.
+               g[i] = only;
+           }
+           //push(out, result);
+
 
 
         }
-        else{
+        /*else{
             for(int n =0; n<9; n++){
                 push(out, int(9));
                 total=0;
             }
-        }
-        /*
-        if(total==1){//update index
-            g[i]= find(out, 1, i*9,(i*9)+9)%9;
-        }*/
-
-
-        push(totals,total);
+        }   */
+        //push(totals,total);
     }
         for(int item=0; item<81;item++){
          int array[]={};
@@ -219,7 +219,7 @@ void populatePossibility_item(int g[];int row[]; int col[]; int cell[]; int out[
                 push(array,out[read+item*9]);
 
             }
-            printf("%f, t:%f, %f\n",item,totals[item],array);
+            //printf("%f, t:%f, %f\n",item,totals[item],array);
         }
 
         //printf("totals: \n%f\n*-*-*-\n",totals);
@@ -227,13 +227,18 @@ void populatePossibility_item(int g[];int row[]; int col[]; int cell[]; int out[
 
 //draw initial state.
 drawGridProgress(grid,0);
-populatePossibility_row(grid,rp);
-populatePossibility_col(grid,cp);
-populatePossibility_cell(grid,lp);
-drawPossibility_row(rp);
-drawPossibility_col(cp);
-populatePossibility_item(grid,rp,cp,lp,reduce);
-printf("grid: \n%f\n",grid);
+
+for(int iteration =0;iteration<20;iteration++){
+    populatePossibility_row(grid,rp);
+    populatePossibility_col(grid,cp);
+    populatePossibility_cell(grid,lp);
+    //drawPossibility_row(iteration, rp);
+    //drawPossibility_col(iteration, cp);
+    populatePossibility_item(iteration,grid,rp,cp,lp,reduce);
+
+    drawGridProgress(grid,iteration);
+    }
+//printf("grid: \n%f\n",grid);
 
 
 //printf("rp: \n%f\n",rp);
