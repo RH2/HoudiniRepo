@@ -86,7 +86,7 @@ void drawPossibility_row(int g[]){
       }
       else{
           int np = addpoint(0,set(xp+x2,0,yp+y2));
-          setpointattrib(0,"Cd",np,set(0.1,0.1,0),"set");
+          setpointattrib(0,"Cd",np,set(0.01,0.01,0),"set");
           setpointattrib(0,"Value",np,int(g[i]),"set");
       }
 
@@ -123,13 +123,14 @@ void drawPossibility_col(int g[]){
       }
       else{
           int np = addpoint(0,set(xp+x2,0,yp+y2));
-          setpointattrib(0,"Cd",np,set(0,0.1,0.1),"set");
+          setpointattrib(0,"Cd",np,set(0,0.01,0.01),"set");
           setpointattrib(0,"Value",np,int(g[i]),"set");
       }
 
     }
 }
 void populatePossibility_cell(int g[];int out[]){
+    int array[] = {};
     for(int c=0;c<3;c++){ //3 vertical columns
         for(int r=0;r<3;r++){// 3 horizontal rows
             //create cell array
@@ -137,18 +138,25 @@ void populatePossibility_cell(int g[];int out[]){
             for(int v=0;v<3;v++){
                 for(int h=0;h<3;h++){
                     push(cell, g[ h + (v*9) + (c*27) + (r*3) ]);
+                    //printf("%f",g[ h + (v*9) + (c*27) + (r*3) ]);
                 }
             }
             //after our [9] array is created, check for each number.
             //printf("cell: %f\n",cell);
             for(int y=1;y<10;y++){
+                //printf("%f",cell);
                 int pass = find(cell, y);
                 if(pass<0){ //if not found
-                    out[y-1  +(c*9)+(r*27)]=1;
+                    push(array,1);
+                    //out[y-1  +(c*9)+(r*27)]=1;
+                }
+                else{
+                    push(array,0);
                 }
             }
         }
     }
+    out= array;
 //printf("out:\n%f\n+++\n", out);
 }
 void populatePossibility_item(int g[];int row[]; int col[]; int cell[]; int out[]){
@@ -164,11 +172,32 @@ void populatePossibility_item(int g[];int row[]; int col[]; int cell[]; int out[
 
            //AND sets
            for(int n =0; n<9; n++){
-            int result = row[rowid+n]*col[colid+n]*cell[cellid+n];
+            int result = row[rowid*9+n]*col[colid*9+n]*cell[cellid*9+n];
+
+
+           //ADD POINTs
+
+             int np2 = addpoint(0,set(colid+ (n%3/20.0), 0, rowid + (n/3)/20.0));
+             int r = result*(n+1);
+             if(result>0){
+             setpointattrib(0,"Cd",np2,set(1.0,1.0,0),"set");
+             }
+             else{
+             setpointattrib(0,"Cd",np2,set(1.0,0,0),"set");
+             }
+             setpointattrib(0,"Value",np2,int(r),"set");
+
             total+= result;
-            push(out, result); //out tracks number of possibilities.
-            //printf("t%f - ",result);
+            push(out, result);
+
+
            }
+
+
+
+
+
+
         }
         else{
             for(int n =0; n<9; n++){
@@ -205,6 +234,11 @@ drawPossibility_row(rp);
 drawPossibility_col(cp);
 populatePossibility_item(grid,rp,cp,lp,reduce);
 printf("grid: \n%f\n",grid);
+
+
+//printf("rp: \n%f\n",rp);
+//printf("cp: \n%f\n",cp);
+//printf("lp: \n%f\n",lp);
 
 
 //sets and deduction ----------------
