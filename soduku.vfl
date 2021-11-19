@@ -194,16 +194,13 @@ void populatePossibility_item(float z; int g[];int row[]; int col[]; int cell[];
             }
            }
 
-
-
-
            if(total==1){ //only if one possibility, update original grid.
                g[i] = only;
            }
-           //push(out, result);
-
-
-
+           if(total==2){
+             //identify other items in row or column with 2 possibilities.
+             //set compare with similar element to eliminate 1 of the 2 possibilities
+           }
         }
         /*else{
             for(int n =0; n<9; n++){
@@ -217,11 +214,9 @@ void populatePossibility_item(float z; int g[];int row[]; int col[]; int cell[];
          int array[]={};
             for(int read=0; read<9;read++){
                 push(array,out[read+item*9]);
-
             }
             //printf("%f, t:%f, %f\n",item,totals[item],array);
         }
-
         //printf("totals: \n%f\n*-*-*-\n",totals);
 }
 
