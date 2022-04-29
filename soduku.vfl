@@ -172,34 +172,30 @@ void populatePossibility_item(float z; int g[];int row[]; int col[]; int cell[];
            int cellid = i/27*3 + i/3 -3*(i/9);
            //AND sets
            for(int n =0; n<9; n++){
-            int result = row[rowid*9+n]*col[colid*9+n]*cell[cellid*9+n];
+              int result = row[rowid*9+n]*col[colid*9+n]*cell[cellid*9+n];
 
-           int drawpoints = 0;
-           if(drawpoints==1){
-               //ADD POINTs
-                int np2 = addpoint(0,set(colid+ (n%3/20.0), z, rowid + (n/3)/20.0));
-                int r = result*(n+1);
-                if(result>0){
-                  setpointattrib(0,"Cd",np2,set(1.0,1,0),"set");
-                  only = n+1;
-                }
-                else{
-                  setpointattrib(0,"Cd",np2,set(1.0,0,0),"set");
-                }
-            }else{
-                if(result>0){
-                  only = n+1;
-                }
-                total+= result;
-            }
-           }
+             int drawpoints = 0;
+             if(drawpoints==1){
+                 //ADD POINTs
+                  int np2 = addpoint(0,set(colid+ (n%3/20.0), z, rowid + (n/3)/20.0));
+                  int r = result*(n+1);
+                  if(result>0){
+                    setpointattrib(0,"Cd",np2,set(1.0,1,0),"set");
+                    only = n+1;
+                  }
+                  else{
+                    setpointattrib(0,"Cd",np2,set(1.0,0,0),"set");
+                  }
+              }else{
+                  if(result>0){
+                    only = n+1;
+                  }
+                  total+= result;
+              }
+           } //FOR EACH ITEM, CHECK EACH SET
 
            if(total==1){ //only if one possibility, update original grid.
                g[i] = only;
-           }
-           if(total==2){
-             //identify other items in row or column with 2 possibilities.
-             //set compare with similar element to eliminate 1 of the 2 possibilities
            }
         }
         /*else{

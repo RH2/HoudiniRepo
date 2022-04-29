@@ -1,0 +1,101 @@
+#include <math.h>
+int int_debug = 1;
+float expandDistance = chf("../polyexpand2d/offset"); //import float from polygonOffset node
+//printf("polyexpandValue: %f", expandDistance );
+
+// We do uvs today.
+// This loop will run over each primitive.
+int VERTS[] = primvertices(0, @primnum); //linear (global) vertex order
+int VERTS_OUTER[] = {};
+
+
+//an attempt to get the actual attributes.
+float adist[] = {};
+float aang[] = {};
+vector apos[] = {};
+int mask[] = {};
+for(int a=0 ; a< len(VERTS) ; a++){
+    int vertp = vertexpoint(0,VERTS[a]);
+    float  dst = point(0,"distance", vertp );
+    float  ang = point(0,"angle", vertp );
+    vector vep = point(0,"P", vertp );
+    int grp = inpointgroup( 0 , "original", vertp );
+    push( adist, dst);
+    push( aang, ang);
+    push( apos, vep);
+    push( mask, grp);
+}
+if(int_debug==1){
+  printf("distances: %f\n",adist);
+  printf("angles: %f\n",aang);
+  printf("positions: %f\n",apos);
+  printf("original: %s\n",mask);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//find an anchor.
+//requirements:
+//  •must be an original point
+//  •must possess the lowest "distance"
+vector anchorPosition;
+float anchorDistance = 100000000000;
+float anchorAngle = 0;
+int anchor_point = -1;
+for( int x = 0 ; x < len(VERTS) ; x++ ){
+  int vpoint = vertexpoint(0, VERTS[x]);
+  int original = inpointgroup( 0 , "original", vpoint);
+  if( original == 1 ){
+
+    //get attributes
+    //float potential_anchor_distance = point( 0 , "distance" , vpoint);
+    //float potential_anchor_angle = point( 0 , "angle" , vpoint);
+    float potential_anchor_distance = vertex( 0 , "distance" , VERTS[x] );
+    float potential_anchor_angle = vertex( 0 , "angle" , VERTS[x] );
+    //printf("prim: %f, x: %i, dcheck: %f, vpoint: %i\n", @primnum, x, potential_anchor_distance, vpoint);
+    vector potential_anchor_position = point( 0 , "P" , vpoint);
+    if( potential_anchor_distance < anchorDistance){
+      anchorDistance = potential_anchor_distance;
+      anchorPosition = potential_anchor_position;
+      anchorAngle = potential_anchor_angle;
+      anchor_point = x;
+    }
+    //also set uv to (distance,0.5)
+    //setvertexattrib(0, "uv", VERTS[x], -1, set( potential_anchor_distance , 0.5 ), "set");
+
+  }
+  else if( original == 0 ){
+    append( VERTS_OUTER , VERTS[x] );
+  }
+}
+
+//after we have an anchor, we can extrapolaaaate
+for( int j = 0 ; j < len(VERTS_OUTER) ; j++ ){
+  //To use a linear vertex index, set the prim_num to the linear vertex number and set vertex_num to -1. Note that this is different from how most other vertex functions work.
+  //int  setvertexattrib(geo,name,prim_num,vertex_num,value,"set")
+  int vpoint = vertexpoint(0, VERTS_OUTER[j]);
+  vector offset = vertex( 0, "edgedist", VERTS_OUTER[j] );
+  vector vpos = point( 0, "P", vpoint );
+
+
+  vector vpos_delta = vpos - anchorPosition;
+  float calc_distance = distance( vpos , anchorPosition );
+  float v_angle = atan2( vpos_delta[2], vpos_delta[0]); // z , x — because this is a projection from the y axis.
+  float angle_difference =  ( v_angle - anchorAngle ) ;
+  //float angle_difference =   anchorAngle - v_angle  ;
+
+  //printf("%f---",anchorDistance);
+  float uv_y = calc_distance * cos( angle_difference ) + anchorDistance ;
+  float uv_x = calc_distance * sin( angle_difference ) ;
+  vector uv_set = set( uv_x, uv_y );
+  setvertexattrib(0, "uv", VERTS_OUTER[j], -1, uv_set , "set");  //linear vertex vertnum to prim, and vert = -1
+}

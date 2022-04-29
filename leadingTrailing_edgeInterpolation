@@ -1,0 +1,77 @@
+int Debug_Print = 0;
+//with the array of all points in the primitive, we find the first leading edge.
+int allpoints[] = primpoints(0,@ptnum);
+int allpoints_nc[];
+int donepoints[];
+foreach( int ap ; allpoints){
+  int nc = neighbourcount(0, ap);
+  append( allpoints_nc , nc);
+}
+
+if( Debug_Print){printf("PRIM: %s ~~~~~~~\nstarting array: %s\nncount array: %s\n", @primnum, allpoints, allpoints_nc );}
+
+int currentsubset[]={};
+int var_collecting = 0;
+for( int a = 0 ; a <= len(allpoints) || var_collecting==1 ; a++ ){
+  if( len(currentsubset)>1 && currentsubset[0] == currentsubset[-1] ) {break;}
+  int this_a = a % len(allpoints);
+  int next_a = (a+1) % len(allpoints);
+
+  if( allpoints_nc[this_a] >= 3 && allpoints_nc[next_a] == 2 ){ //if leading edge
+
+    //BEGIN COLLECTING
+    if( Debug_Print){printf("lead-found ~");}
+    var_collecting = 1;
+  }
+  if( var_collecting == 1){ //Continue collection if starting, or if last loop was collecting.
+    push( currentsubset , allpoints[this_a] );
+  }
+  if( Debug_Print){printf("loop progress (%i): %s\n", var_collecting ,currentsubset );}
+  if( Debug_Print){printf("this_nc: %i, next_nc: %i \n", allpoints[this_a] , allpoints[next_a] );}
+  if( allpoints_nc[this_a] == 2 && allpoints_nc[next_a] >= 3 ){ //if trailing edge
+    push( currentsubset , allpoints[next_a] );
+
+    //START THE PROCESS
+    if( Debug_Print){printf("PROCESS");}
+
+      //lets assume i have a leading and trailing point.
+      int sub[]  = currentsubset;
+      int istart = sub[0];
+      int iend = sub[-1];
+
+
+      if( Debug_Print){printf("%s",sub);}
+
+      //get the attributes
+      float distance1 = point(0,"distance",istart);
+      float distance2 = point(0,"distance",iend);
+      float angle1 = point(0,"angle",istart);
+      float angle2 = point(0,"angle",iend);
+
+      float time[] = {0.0}; //same as curve u coordinate but different name because it could be confusing.
+      float subtime = 0;
+      for( int n = 1 ; n < len(sub); n++ ){ //n starts at 1 because 0 is 0.
+        vector position1 = point(0,"P", sub[n-1]);
+        vector position2 = point(0,"P", sub[n]);
+        float calculatedDistance = distance(position1,position2);
+        subtime+=calculatedDistance;
+        append(time,subtime);
+      }
+      //After finishing the time calculation, the last point should store the total distance of the subcurve or polyline (whatever you want to call it).
+
+      float totaltime = time[-1];
+      if( Debug_Print){printf("T-total: %f, T-array: %s\n", totaltime, time);}
+      for( int m = 1 ; m < len(time) -1 ; m++ ){ //not touching the first and the last because they are already at the correct values.
+        float ratio = time[m] / totaltime;
+        float ratio_distance = lerp(distance1,distance2,ratio);
+        float ratio_angle = lerp(angle1,angle2,ratio);
+        setpointattrib( 0 , "distance" , sub[m] , ratio_distance , "set" );
+        setpointattrib( 0 , "angle" , sub[m] , ratio_angle , "set" );
+      }
+    //EMPTY THE SUBSET
+    currentsubset = {};
+    //STOP COLLECTING
+    var_collecting = 0;
+    if( Debug_Print){printf("stop\n");}
+  }
+}
